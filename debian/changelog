@@ -1,0 +1,5 @@
+pymtbl (0.1-1) unstable; urgency=low
+
+  * Initial release; closes: #661209.
+
+ -- Robert S. Edmonds <edmonds@debian.org>  Sun, 04 Mar 2012 17:51:56 -0500
