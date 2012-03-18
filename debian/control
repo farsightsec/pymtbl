@@ -5,7 +5,8 @@ Maintainer: Robert S. Edmonds <edmonds@debian.org>
 Build-Depends:
  debhelper (>= 9~),
  libmtbl-dev,
- python-all-dev (>= 2.6.6-3~)
+ python-all-dev (>= 2.6.6-3~),
+ cython
 Standards-Version: 3.9.3
 
 Package: python-mtbl
