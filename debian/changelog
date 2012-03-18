@@ -1,3 +1,9 @@
+pymtbl (0.1-2) unstable; urgency=low
+
+  * Add missing build-dependency on cython.
+
+ -- Robert S. Edmonds <edmonds@debian.org>  Sun, 18 Mar 2012 14:07:33 -0400
+
 pymtbl (0.1-1) unstable; urgency=low
 
   * Initial release; closes: #661209.
