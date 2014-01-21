@@ -7,9 +7,6 @@ COMPRESSION_NONE = MTBL_COMPRESSION_NONE
 COMPRESSION_SNAPPY = MTBL_COMPRESSION_SNAPPY
 COMPRESSION_ZLIB = MTBL_COMPRESSION_ZLIB
 
-class IterException(Exception):
-    pass
-
 class KeyOrderError(Exception):
     pass
 
@@ -64,16 +61,18 @@ def varint_decode(bytes py_buf):
 @cython.internal
 cdef class iterkeys(object):
     cdef mtbl_iter *_instance
+    cdef object _parent
 
     def __cinit__(self):
         self._instance = NULL
+
+    def __init__(self, object _parent):
+        self._parent = _parent
 
     def __dealloc__(self):
         mtbl_iter_destroy(&self._instance)
 
     def __iter__(self):
-        if self._instance == NULL:
-            raise NotImplementedError
         return self
 
     def __next__(self):
@@ -94,16 +93,18 @@ cdef class iterkeys(object):
 @cython.internal
 cdef class itervalues(object):
     cdef mtbl_iter *_instance
+    cdef object _parent
 
     def __cinit__(self):
         self._instance = NULL
+
+    def __init__(self, object _parent):
+        self._parent = _parent
 
     def __dealloc__(self):
         mtbl_iter_destroy(&self._instance)
 
     def __iter__(self):
-        if self._instance == NULL:
-            raise NotImplementedError
         return self
 
     def __next__(self):
@@ -124,16 +125,18 @@ cdef class itervalues(object):
 @cython.internal
 cdef class iteritems(object):
     cdef mtbl_iter *_instance
+    cdef object _parent
 
     def __cinit__(self):
         self._instance = NULL
+
+    def __init__(self, object _parent):
+        self._parent = _parent
 
     def __dealloc__(self):
         mtbl_iter_destroy(&self._instance)
 
     def __iter__(self):
-        if self._instance == NULL:
-            raise NotImplementedError
         return self
 
     def __next__(self):
@@ -152,24 +155,18 @@ cdef class iteritems(object):
         return (PyString_FromStringAndSize(<char *> key, len_key),
                 PyString_FromStringAndSize(<char *> val, len_val))
 
-cdef get_iterkeys(mtbl_iter *instance):
-    if instance == NULL:
-        raise IterException
-    it = iterkeys()
+cdef get_iterkeys(parent, mtbl_iter *instance):
+    it = iterkeys(parent)
     it._instance = instance
     return it
 
-cdef get_itervalues(mtbl_iter *instance):
-    if instance == NULL:
-        raise IterException
-    it = itervalues()
+cdef get_itervalues(parent, mtbl_iter *instance):
+    it = itervalues(parent)
     it._instance = instance
     return it
 
-cdef get_iteritems(mtbl_iter *instance):
-    if instance == NULL:
-        raise IterException
-    it = iteritems()
+cdef get_iteritems(parent, mtbl_iter *instance):
+    it = iteritems(parent)
     it._instance = instance
     return it
 
@@ -244,17 +241,17 @@ cdef class reader(DictMixin):
     def iterkeys(self):
         """R.iterkeys() -> an iterator over the keys of R."""
         self.check_initialized()
-        return get_iterkeys(mtbl_source_iter(mtbl_reader_source(self._instance)))
+        return get_iterkeys(self, mtbl_source_iter(mtbl_reader_source(self._instance)))
 
     def itervalues(self):
         """R.itervalues() -> an iterator over the values of R."""
         self.check_initialized()
-        return get_itervalues(mtbl_source_iter(mtbl_reader_source(self._instance)))
+        return get_itervalues(self, mtbl_source_iter(mtbl_reader_source(self._instance)))
 
     def iteritems(self):
         """R.iteritems() -> an iterator over the (key, value) items of R."""
         self.check_initialized()
-        return get_iteritems(mtbl_source_iter(mtbl_reader_source(self._instance)))
+        return get_iteritems(self, mtbl_source_iter(mtbl_reader_source(self._instance)))
 
     def __contains__(self, bytes py_key):
         """R.__contains__(k) -> True if R has a key k, else False"""
@@ -295,7 +292,7 @@ cdef class reader(DictMixin):
         len_key0 = PyString_Size(py_key0)
         len_key1 = PyString_Size(py_key1)
 
-        return get_iteritems(mtbl_source_get_range(
+        return get_iteritems(self, mtbl_source_get_range(
             mtbl_reader_source(self._instance), key0, len_key0, key1, len_key1))
 
     def get_prefix(self, bytes py_key):
@@ -312,7 +309,7 @@ cdef class reader(DictMixin):
         key = <uint8_t *> PyString_AsString(py_key)
         len_key = PyString_Size(py_key)
 
-        return get_iteritems(mtbl_source_get_prefix(
+        return get_iteritems(self, mtbl_source_get_prefix(
             mtbl_reader_source(self._instance), key, len_key))
 
     def __getitem__(self, bytes py_key):
@@ -477,15 +474,15 @@ cdef class merger(object):
 
     def iterkeys(self):
         """M.iterkeys() -> an iterator over the merged keys of M."""
-        return get_iterkeys(mtbl_source_iter(mtbl_merger_source(self._instance)))
+        return get_iterkeys(self, mtbl_source_iter(mtbl_merger_source(self._instance)))
 
     def itervalues(self):
         """M.itervalues() -> an iterator over the merged values of M."""
-        return get_itervalues(mtbl_source_iter(mtbl_merger_source(self._instance)))
+        return get_itervalues(self, mtbl_source_iter(mtbl_merger_source(self._instance)))
 
     def iteritems(self):
         """M.iteritems() -> an iterator over the merged (key, value) items of M."""
-        return get_iteritems(mtbl_source_iter(mtbl_merger_source(self._instance)))
+        return get_iteritems(self, mtbl_source_iter(mtbl_merger_source(self._instance)))
 
     def get(self, bytes py_key):
         """
@@ -498,7 +495,8 @@ cdef class merger(object):
         key = <uint8_t *> PyString_AsString(py_key)
         len_key = PyString_Size(py_key)
 
-        return get_iteritems(mtbl_source_get(mtbl_merger_source(self._instance), key, len_key))
+        return get_iteritems(self,
+                mtbl_source_get(mtbl_merger_source(self._instance), key, len_key))
 
     def get_range(self, bytes py_key0, bytes py_key1):
         """
@@ -516,7 +514,7 @@ cdef class merger(object):
         len_key0 = PyString_Size(py_key0)
         len_key1 = PyString_Size(py_key1)
 
-        return get_iteritems(mtbl_source_get_range(
+        return get_iteritems(self, mtbl_source_get_range(
             mtbl_merger_source(self._instance), key0, len_key0, key1, len_key1))
 
     def get_prefix(self, bytes py_key):
@@ -531,7 +529,7 @@ cdef class merger(object):
         key = <uint8_t *> PyString_AsString(py_key)
         len_key = PyString_Size(py_key)
 
-        return get_iteritems(mtbl_source_get_prefix(
+        return get_iteritems(self, mtbl_source_get_prefix(
             mtbl_merger_source(self._instance), key, len_key))
 
 cdef class sorter(object):
@@ -613,12 +611,12 @@ cdef class sorter(object):
 
     def iterkeys(self):
         """S.iterkeys() -> an iterator over the sorted keys of R."""
-        return get_iterkeys(mtbl_sorter_iter(self._instance))
+        return get_iterkeys(self, mtbl_sorter_iter(self._instance))
 
     def itervalues(self):
         """S.itervalues() -> an iterator over the sorted values of R."""
-        return get_itervalues(mtbl_sorter_iter(self._instance))
+        return get_itervalues(self, mtbl_sorter_iter(self._instance))
 
     def iteritems(self):
         """S.iteritems() -> an iterator over the sorted (key, value) items of R."""
-        return get_iteritems(mtbl_sorter_iter(self._instance))
+        return get_iteritems(self, mtbl_sorter_iter(self._instance))
