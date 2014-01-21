@@ -1,6 +1,8 @@
 .*swp
+/MANIFEST
+/build/
+/dist/
 mtbl.c
-build/
 examples/*.mtbl
 examples/wf/*.mtbl
 examples/wf/*.txt
