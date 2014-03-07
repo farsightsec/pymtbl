@@ -1,4 +1,5 @@
 include "mtbl.pxi"
+import threading
 
 DEFAULT_SORTER_TEMP_DIR = '/var/tmp'
 DEFAULT_SORTER_MEMORY = 1073741824
@@ -367,6 +368,7 @@ cdef class writer(object):
     block_restart_interval -- how frequently to restart key prefix compression (default 16)
     """
     cdef mtbl_writer *_instance
+    cdef _lock
 
     def __cinit__(self):
         self._instance = NULL
@@ -385,6 +387,8 @@ cdef class writer(object):
                 compression == COMPRESSION_ZLIB):
             raise UnknownCompressionTypeException
 
+        self._lock = threading.Semaphore()
+
         cdef mtbl_writer_options *opt
         with nogil:
             opt = mtbl_writer_options_init()
@@ -398,8 +402,9 @@ cdef class writer(object):
 
     def close(self):
         """W.close() -- finalize and close the writer"""
-        with nogil:
-            mtbl_writer_destroy(&self._instance)
+        with self._lock:
+            with nogil:
+                mtbl_writer_destroy(&self._instance)
 
     def __setitem__(self, bytes py_key, bytes py_val):
         """
@@ -423,8 +428,9 @@ cdef class writer(object):
         len_key = PyString_Size(py_key)
         len_val = PyString_Size(py_val)
 
-        with nogil:
-            res = mtbl_writer_add(self._instance, key, len_key, val, len_val)
+        with self._lock:
+            with nogil:
+                res = mtbl_writer_add(self._instance, key, len_key, val, len_val)
 
         if res == mtbl_res_failure:
             raise KeyOrderError
@@ -462,6 +468,7 @@ cdef class merger(object):
     """
     cdef mtbl_merger *_instance
     cdef set _references
+    cdef _lock
 
     def __cinit__(self):
         self._instance = NULL
@@ -479,19 +486,22 @@ cdef class merger(object):
         self._instance = mtbl_merger_init(opt)
         mtbl_merger_options_destroy(&opt)
         self._references = set()
+        self._lock = threading.Semaphore()
 
     def add_reader(self, reader r):
         """M.add_reader(mtbl.reader) -- add a reader object as a merge input"""
-        with nogil:
-            mtbl_merger_add_source(self._instance, mtbl_reader_source(r._instance))
+        with self._lock:
+            with nogil:
+                mtbl_merger_add_source(self._instance, mtbl_reader_source(r._instance))
         self._references.add(r)
 
     def write(self, writer w):
         """M.write(mtbl.writer) -- dump merged output to writer"""
         cdef mtbl_res res
 
-        with nogil:
-            res = mtbl_source_write(mtbl_merger_source(self._instance), w._instance)
+        with w._lock:
+            with nogil:
+                res = mtbl_source_write(mtbl_merger_source(self._instance), w._instance)
         if res != mtbl_res_success:
             raise RuntimeError
 
@@ -573,6 +583,7 @@ cdef class sorter(object):
     max_memory -- maxmimum amount of memory for in-memory sorting in bytes (default 1 GB)
     """
     cdef mtbl_sorter *_instance
+    cdef _lock
 
     def __cinit__(self):
         self._instance = NULL
@@ -586,6 +597,8 @@ cdef class sorter(object):
                  bytes temp_dir=DEFAULT_SORTER_TEMP_DIR,
                  size_t max_memory=DEFAULT_SORTER_MEMORY):
         cdef mtbl_sorter_options *opt
+        self._lock = threading.Semaphore()
+
         with nogil:
             opt = mtbl_sorter_options_init()
 
@@ -603,8 +616,9 @@ cdef class sorter(object):
         """S.write(mtbl.writer) -- dump sorted output to writer"""
         cdef mtbl_res res
 
-        with nogil:
-            res = mtbl_sorter_write(self._instance, w._instance)
+        with w._lock:
+            with nogil:
+                res = mtbl_sorter_write(self._instance, w._instance)
         if res != mtbl_res_success:
             raise RuntimeError
 
@@ -630,8 +644,9 @@ cdef class sorter(object):
         len_key = PyString_Size(py_key)
         len_val = PyString_Size(py_val)
 
-        with nogil:
-            res = mtbl_sorter_add(self._instance, key, len_key, val, len_val)
+        with self._lock:
+            with nogil:
+                res = mtbl_sorter_add(self._instance, key, len_key, val, len_val)
         if res == mtbl_res_failure:
             raise KeyOrderError
 
