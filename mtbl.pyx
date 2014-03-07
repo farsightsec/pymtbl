@@ -34,7 +34,8 @@ def varint_length_packed(bytes py_buf):
     cdef Py_ssize_t len_buf
     cdef size_t sz
     PyString_AsStringAndSize(py_buf, <char **> &buf, &len_buf)
-    sz = mtbl_varint_length_packed(buf, len_buf)
+    with nogil:
+        sz = mtbl_varint_length_packed(buf, len_buf)
     if sz == 0:
         raise VarintDecodingError
     return sz
@@ -43,7 +44,8 @@ def varint_encode(long v):
     """varint_encode(v) -> encode integer v using packed variable-width encoding."""
     cdef uint8_t buf[10]
     cdef size_t sz
-    sz = mtbl_varint_encode64(buf, v)
+    with nogil:
+        sz = mtbl_varint_encode64(buf, v)
     return PyString_FromStringAndSize(<char *> buf, sz)
 
 def varint_decode(bytes py_buf):
@@ -55,7 +57,8 @@ def varint_decode(bytes py_buf):
     PyString_AsStringAndSize(py_buf, <char **> &buf, &len_buf)
     if mtbl_varint_length_packed(buf, len_buf) == 0:
         raise VarintDecodingError
-    mtbl_varint_decode64(buf, &val)
+    with nogil:
+        mtbl_varint_decode64(buf, &val)
     return val
 
 @cython.internal
@@ -70,7 +73,8 @@ cdef class iterkeys(object):
         self._parent = _parent
 
     def __dealloc__(self):
-        mtbl_iter_destroy(&self._instance)
+        with nogil:
+            mtbl_iter_destroy(&self._instance)
 
     def __iter__(self):
         return self
@@ -85,7 +89,8 @@ cdef class iterkeys(object):
         if self._instance == NULL:
             raise StopIteration
 
-        res = mtbl_iter_next(self._instance, &key, &len_key, &val, &len_val)
+        with nogil:
+            res = mtbl_iter_next(self._instance, &key, &len_key, &val, &len_val)
         if res == mtbl_res_failure:
             raise StopIteration
         return PyString_FromStringAndSize(<char *> key, len_key)
@@ -102,7 +107,8 @@ cdef class itervalues(object):
         self._parent = _parent
 
     def __dealloc__(self):
-        mtbl_iter_destroy(&self._instance)
+        with nogil:
+            mtbl_iter_destroy(&self._instance)
 
     def __iter__(self):
         return self
@@ -117,7 +123,8 @@ cdef class itervalues(object):
         if self._instance == NULL:
             raise StopIteration
 
-        res = mtbl_iter_next(self._instance, &key, &len_key, &val, &len_val)
+        with nogil:
+            res = mtbl_iter_next(self._instance, &key, &len_key, &val, &len_val)
         if res == mtbl_res_failure:
             raise StopIteration
         return PyString_FromStringAndSize(<char *> val, len_val)
@@ -134,7 +141,8 @@ cdef class iteritems(object):
         self._parent = _parent
 
     def __dealloc__(self):
-        mtbl_iter_destroy(&self._instance)
+        with nogil:
+            mtbl_iter_destroy(&self._instance)
 
     def __iter__(self):
         return self
@@ -149,9 +157,12 @@ cdef class iteritems(object):
         if self._instance == NULL:
             raise StopIteration
 
-        res = mtbl_iter_next(self._instance, &key, &len_key, &val, &len_val)
+        with nogil:
+            res = mtbl_iter_next(self._instance, &key, &len_key, &val, &len_val)
+
         if res == mtbl_res_failure:
             raise StopIteration
+
         return (PyString_FromStringAndSize(<char *> key, len_key),
                 PyString_FromStringAndSize(<char *> val, len_val))
 
@@ -223,14 +234,18 @@ cdef class reader(DictMixin):
         self._instance = NULL
 
     def __dealloc__(self):
-        mtbl_reader_destroy(&self._instance)
+        with nogil:
+            mtbl_reader_destroy(&self._instance)
 
-    def __init__(self, bytes fname, bool verify_checksums=False):
+    def __init__(self, char * fname, bool verify_checksums=False):
         cdef mtbl_reader_options *opt
-        opt = mtbl_reader_options_init()
-        mtbl_reader_options_set_verify_checksums(opt, verify_checksums)
-        self._instance = mtbl_reader_init(fname, opt)
-        mtbl_reader_options_destroy(&opt)
+
+        with nogil:
+            opt = mtbl_reader_options_init()
+            mtbl_reader_options_set_verify_checksums(opt, verify_checksums)
+            self._instance = mtbl_reader_init(fname, opt)
+            mtbl_reader_options_destroy(&opt)
+
         if (self._instance == NULL):
             raise IOError("unable to open file: '%s'" % fname)
 
@@ -326,15 +341,18 @@ cdef class reader(DictMixin):
         len_key = PyString_Size(py_key)
 
         items = []
-        it = mtbl_source_get(mtbl_reader_source(self._instance), key, len_key)
+        with nogil:
+            it = mtbl_source_get(mtbl_reader_source(self._instance), key, len_key)
         if it == NULL:
             raise KeyError(py_key)
         while True:
-            res = mtbl_iter_next(it, &key, &len_key, &val, &len_val)
+            with nogil:
+                res = mtbl_iter_next(it, &key, &len_key, &val, &len_val)
             if res == mtbl_res_failure:
                 break
             items.append(PyString_FromStringAndSize(<char *> val, len_val))
-        mtbl_iter_destroy(&it)
+        with nogil:
+            mtbl_iter_destroy(&it)
         if not items:
             raise KeyError(py_key)
         return items
@@ -354,10 +372,11 @@ cdef class writer(object):
         self._instance = NULL
 
     def __dealloc__(self):
-        mtbl_writer_destroy(&self._instance)
+        with nogil:
+            mtbl_writer_destroy(&self._instance)
 
     def __init__(self,
-            bytes fname,
+            char * fname,
             mtbl_compression_type compression=COMPRESSION_NONE,
             size_t block_size=8192,
             size_t block_restart_interval=16):
@@ -367,18 +386,20 @@ cdef class writer(object):
             raise UnknownCompressionTypeException
 
         cdef mtbl_writer_options *opt
-        opt = mtbl_writer_options_init()
-        mtbl_writer_options_set_compression(opt, compression)
-        mtbl_writer_options_set_block_size(opt, block_size)
-        mtbl_writer_options_set_block_restart_interval(opt, block_restart_interval)
-        self._instance = mtbl_writer_init(fname, opt)
-        mtbl_writer_options_destroy(&opt)
+        with nogil:
+            opt = mtbl_writer_options_init()
+            mtbl_writer_options_set_compression(opt, compression)
+            mtbl_writer_options_set_block_size(opt, block_size)
+            mtbl_writer_options_set_block_restart_interval(opt, block_restart_interval)
+            self._instance = mtbl_writer_init(fname, opt)
+            mtbl_writer_options_destroy(&opt)
         if self._instance == NULL:
             raise IOError("unable to initialize file: '%s'" % fname)
 
     def close(self):
         """W.close() -- finalize and close the writer"""
-        mtbl_writer_destroy(&self._instance)
+        with nogil:
+            mtbl_writer_destroy(&self._instance)
 
     def __setitem__(self, bytes py_key, bytes py_val):
         """
@@ -402,7 +423,9 @@ cdef class writer(object):
         len_key = PyString_Size(py_key)
         len_val = PyString_Size(py_val)
 
-        res = mtbl_writer_add(self._instance, key, len_key, val, len_val)
+        with nogil:
+            res = mtbl_writer_add(self._instance, key, len_key, val, len_val)
+
         if res == mtbl_res_failure:
             raise KeyOrderError
 
@@ -444,7 +467,8 @@ cdef class merger(object):
         self._instance = NULL
 
     def __dealloc__(self):
-        mtbl_merger_destroy(&self._instance)
+        with nogil:
+            mtbl_merger_destroy(&self._instance)
 
     def __init__(self, object merge_func):
         cdef mtbl_merger_options *opt
@@ -458,14 +482,16 @@ cdef class merger(object):
 
     def add_reader(self, reader r):
         """M.add_reader(mtbl.reader) -- add a reader object as a merge input"""
-        mtbl_merger_add_source(self._instance, mtbl_reader_source(r._instance))
+        with nogil:
+            mtbl_merger_add_source(self._instance, mtbl_reader_source(r._instance))
         self._references.add(r)
 
     def write(self, writer w):
         """M.write(mtbl.writer) -- dump merged output to writer"""
         cdef mtbl_res res
 
-        res = mtbl_source_write(mtbl_merger_source(self._instance), w._instance)
+        with nogil:
+            res = mtbl_source_write(mtbl_merger_source(self._instance), w._instance)
         if res != mtbl_res_success:
             raise RuntimeError
 
@@ -552,27 +578,33 @@ cdef class sorter(object):
         self._instance = NULL
 
     def __dealloc__(self):
-        mtbl_sorter_destroy(&self._instance)
+        with nogil:
+            mtbl_sorter_destroy(&self._instance)
 
     def __init__(self,
                  object merge_func,
                  bytes temp_dir=DEFAULT_SORTER_TEMP_DIR,
                  size_t max_memory=DEFAULT_SORTER_MEMORY):
         cdef mtbl_sorter_options *opt
-        opt = mtbl_sorter_options_init()
+        with nogil:
+            opt = mtbl_sorter_options_init()
+
         mtbl_sorter_options_set_merge_func(opt,
                                            <mtbl_merge_func> merge_func_wrapper,
                                            <void *> merge_func)
+
         mtbl_sorter_options_set_temp_dir(opt, temp_dir)
         mtbl_sorter_options_set_max_memory(opt, max_memory)
-        self._instance = mtbl_sorter_init(opt)
-        mtbl_sorter_options_destroy(&opt)
+        with nogil:
+            self._instance = mtbl_sorter_init(opt)
+            mtbl_sorter_options_destroy(&opt)
 
     def write(self, writer w):
         """S.write(mtbl.writer) -- dump sorted output to writer"""
         cdef mtbl_res res
 
-        res = mtbl_sorter_write(self._instance, w._instance)
+        with nogil:
+            res = mtbl_sorter_write(self._instance, w._instance)
         if res != mtbl_res_success:
             raise RuntimeError
 
@@ -598,7 +630,8 @@ cdef class sorter(object):
         len_key = PyString_Size(py_key)
         len_val = PyString_Size(py_val)
 
-        res = mtbl_sorter_add(self._instance, key, len_key, val, len_val)
+        with nogil:
+            res = mtbl_sorter_add(self._instance, key, len_key, val, len_val)
         if res == mtbl_res_failure:
             raise KeyOrderError
 
