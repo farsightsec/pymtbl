@@ -441,8 +441,8 @@ cdef class writer(object):
 
 cdef void merge_func_wrapper(void *clos,
         uint8_t *key, size_t len_key,
-        uint8_t *val0, uint8_t len_val0,
-        uint8_t *val1, uint8_t len_val1,
+        uint8_t *val0, size_t len_val0,
+        uint8_t *val1, size_t len_val1,
         uint8_t **merged_val, size_t *len_merged_val) with gil:
     cdef str py_key
     cdef str py_val0
