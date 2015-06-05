@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 NAME = 'pymtbl'
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 
 from distutils.core import setup
 from distutils.extension import Extension
