@@ -15,6 +15,8 @@ cdef extern from "mtbl.h":
         MTBL_COMPRESSION_NONE
         MTBL_COMPRESSION_SNAPPY
         MTBL_COMPRESSION_ZLIB
+        MTBL_COMPRESSION_LZ4
+        MTBL_COMPRESSION_LZ4HC
 
     struct mtbl_iter:
         pass

@@ -7,6 +7,8 @@ DEFAULT_SORTER_MEMORY = 1073741824
 COMPRESSION_NONE = MTBL_COMPRESSION_NONE
 COMPRESSION_SNAPPY = MTBL_COMPRESSION_SNAPPY
 COMPRESSION_ZLIB = MTBL_COMPRESSION_ZLIB
+COMPRESSION_LZ4 = MTBL_COMPRESSION_LZ4
+COMPRESSION_LZ4HC = MTBL_COMPRESSION_LZ4HC
 
 class KeyOrderError(Exception):
     pass
@@ -384,7 +386,9 @@ cdef class writer(object):
             size_t block_restart_interval=16):
         if not (compression == COMPRESSION_NONE or
                 compression == COMPRESSION_SNAPPY or
-                compression == COMPRESSION_ZLIB):
+                compression == COMPRESSION_ZLIB or
+                compression == COMPRESSION_LZ4 or
+                compression == COMPRESSION_LZ4HC):
             raise UnknownCompressionTypeException
 
         self._lock = threading.Semaphore()
