@@ -1,7 +1,7 @@
 Source: pymtbl
 Section: python
 Priority: optional
-Maintainer: Robert S. Edmonds <edmonds@debian.org>
+Maintainer: Robert Edmonds <edmonds@debian.org>
 Build-Depends:
  debhelper (>= 9~),
  libmtbl-dev,
