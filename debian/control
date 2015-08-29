@@ -7,7 +7,7 @@ Build-Depends:
  libmtbl-dev,
  python-all-dev (>= 2.6.6-3~),
  cython
-Standards-Version: 3.9.5
+Standards-Version: 3.9.6
 
 Package: python-mtbl
 Architecture: any
