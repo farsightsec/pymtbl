@@ -6,6 +6,7 @@ Build-Depends:
  cython,
  debhelper (>= 9~),
  libmtbl-dev,
+ pkg-config,
  python-all-dev (>= 2.6.6-3~),
 Standards-Version: 3.9.6
 
