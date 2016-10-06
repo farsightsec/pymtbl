@@ -473,6 +473,7 @@ cdef class merger(object):
     cdef mtbl_merger *_instance
     cdef set _references
     cdef _lock
+    cdef object merge_func
 
     def __cinit__(self):
         self._instance = NULL
@@ -483,6 +484,7 @@ cdef class merger(object):
 
     def __init__(self, object merge_func):
         cdef mtbl_merger_options *opt
+        self.merge_func = merge_func
         opt = mtbl_merger_options_init()
         mtbl_merger_options_set_merge_func(opt,
                                            <mtbl_merge_func> merge_func_wrapper,
