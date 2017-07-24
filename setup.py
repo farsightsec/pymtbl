@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 NAME = 'pymtbl'
-VERSION = '0.4.0'
+VERSION = '0.4.1'
 
 from distutils.core import setup
 from distutils.extension import Extension
@@ -26,7 +26,7 @@ try:
     setup(
         name = NAME,
         version = VERSION,
-        ext_modules = [ Extension('mtbl', ['mtbl.pyx'], **pkgconfig('libmtbl >= 0.8.0')) ],
+        ext_modules = [ Extension('mtbl', ['mtbl.pyx'], **pkgconfig('libmtbl >= 1.1.0')) ],
         cmdclass = {'build_ext': build_ext},
     )
 except ImportError:
