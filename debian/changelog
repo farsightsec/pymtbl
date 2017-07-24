@@ -1,3 +1,15 @@
+pymtbl (0.4.1-1~fsi7) unstable; urgency=medium
+
+  * Bump version for the setup.py libmtbl1 dependency update.
+
+ -- Farsight Security, Inc. <software@farsightsecurity.com>  Mon, 24 Jul 2017 19:49:52 +0000
+
+pymtbl (0.4.0-2~fsi7) unstable; urgency=medium
+
+  * Depend on libmtbl1.
+
+ -- Farsight Security, Inc. <software@farsightsecurity.com>  Fri, 16 Jun 2017 18:53:25 +0000
+
 pymtbl (0.4.0-1) unstable; urgency=medium
 
   * New upstream release.
