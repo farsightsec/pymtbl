@@ -18,6 +18,11 @@ cdef extern from "mtbl.h":
         MTBL_COMPRESSION_LZ4
         MTBL_COMPRESSION_LZ4HC
 
+    ctypedef enum mtbl_file_version:
+        MTBL_FORMAT_V1
+        MTBL_FORMAT_V2
+
+
     struct mtbl_iter:
         pass
     struct mtbl_source:
@@ -38,12 +43,14 @@ cdef extern from "mtbl.h":
         pass
     struct mtbl_sorter_options:
         pass
+    struct mtbl_metadata:
+        pass
 
     ctypedef void (*mtbl_merge_func)(void *clos, uint8_t *, size_t, uint8_t *, size_t, uint8_t *, size_t, uint8_t **, size_t *)
     
     # iter
     void mtbl_iter_destroy(mtbl_iter **) nogil
-    mtbl_res mtbl_iter_next(mtbl_iter *, uint8_t **, size_t *, uint8_t **, size_t *) nogil
+    mtbl_res mtbl_iter_next(mtbl_iter *, const uint8_t **, size_t *, const uint8_t **, size_t *) nogil
 
     # source
     mtbl_iter *mtbl_source_iter(mtbl_source *) nogil
@@ -94,6 +101,18 @@ cdef extern from "mtbl.h":
     void mtbl_sorter_options_set_merge_func(mtbl_sorter_options *, mtbl_merge_func, void *) nogil
     void mtbl_sorter_options_set_temp_dir(mtbl_sorter_options *, char *) nogil
     void mtbl_sorter_options_set_max_memory(mtbl_sorter_options *, size_t) nogil
+
+    mtbl_metadata *mtbl_reader_metadata(mtbl_reader *) nogil
+    mtbl_file_version mtbl_metadata_file_version(const mtbl_metadata *) nogil
+    uint64_t mtbl_metadata_index_block_offset(const mtbl_metadata *) nogil
+    uint64_t mtbl_metadata_data_block_size(const mtbl_metadata *) nogil
+    uint64_t mtbl_metadata_compression_algorithm(const mtbl_metadata *) nogil
+    uint64_t mtbl_metadata_count_entries(const mtbl_metadata *) nogil
+    uint64_t mtbl_metadata_count_data_blocks(const mtbl_metadata *) nogil
+    uint64_t mtbl_metadata_bytes_data_blocks(const mtbl_metadata *) nogil
+    uint64_t mtbl_metadata_bytes_index_block(const mtbl_metadata *) nogil
+    uint64_t mtbl_metadata_bytes_keys(const mtbl_metadata *) nogil
+    uint64_t mtbl_metadata_bytes_values(const mtbl_metadata *) nogil
 
     # varint
     unsigned mtbl_varint_length(uint64_t) nogil

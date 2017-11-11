@@ -360,6 +360,23 @@ cdef class reader(DictMixin):
             raise KeyError(py_key)
         return items
 
+    def metadata(self):
+        """R.metadata() -> retrieve metadata statistics for R."""
+        self.check_initialized()
+        meta = mtbl_reader_metadata(self._instance)
+        metadata = {}
+        metadata["file_version"] = mtbl_metadata_file_version(meta)
+        metadata["index_block_offset"] = mtbl_metadata_index_block_offset(meta)
+        metadata["data_block_size"] = mtbl_metadata_data_block_size(meta)
+        metadata["compression_algorithm"] = mtbl_metadata_compression_algorithm(meta)
+        metadata["count_entries"] = mtbl_metadata_count_entries(meta)
+        metadata["count_data_blocks"] = mtbl_metadata_count_data_blocks(meta)
+        metadata["bytes_data_blocks"] = mtbl_metadata_bytes_data_blocks(meta)
+        metadata["bytes_index_block"] = mtbl_metadata_bytes_index_block(meta)
+        metadata["bytes_keys"] = mtbl_metadata_bytes_keys(meta)
+        metadata["bytes_values"] = mtbl_metadata_bytes_values(meta)
+        return metadata
+
 cdef class writer(object):
     """
     writer(fname) -> new MTBL writer, output to file fname
