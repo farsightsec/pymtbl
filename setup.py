@@ -3,8 +3,9 @@
 NAME = 'pymtbl'
 VERSION = '0.4.1'
 
-from distutils.core import setup
+from distutils.core import setup, Command
 from distutils.extension import Extension
+import unittest
 
 def pkgconfig(*packages, **kw):
     import subprocess
@@ -21,13 +22,30 @@ def pkgconfig(*packages, **kw):
             kw.setdefault(flag_map[flag], []).append(arg)
     return kw
 
+
+class Test(Command):
+    user_options = []
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        unittest.TextTestRunner(verbosity=1).run(
+            unittest.TestLoader().discover('.'))
+
+
 try:
     from Cython.Distutils import build_ext
     setup(
         name = NAME,
         version = VERSION,
         ext_modules = [ Extension('mtbl', ['mtbl.pyx'], **pkgconfig('libmtbl >= 1.1.0')) ],
-        cmdclass = {'build_ext': build_ext},
+        cmdclass = {
+            'build_ext': build_ext,
+            'test': Test,
+        },
     )
 except ImportError:
     import os
