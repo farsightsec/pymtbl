@@ -3,22 +3,14 @@ import os
 import unittest
 
 import mtbl
-from . import write_mtbl
+from . import MtblTestCase
 
 
 def merge_func(key, val0, val1):
     return val0 + ' ' + val1
 
 
-class MergerTestCase(unittest.TestCase):
-
-    def write_mtbl(self, filename, tuples):
-        # tempfiles would be better but mtbl is bossy about fds :/ (?)
-        filepath = os.path.join(
-            os.path.dirname(__file__), filename)
-        write_mtbl(filepath, tuples)
-        self.addCleanup(os.remove, filepath)
-        return filepath
+class MergerTestCase(MtblTestCase):
 
     def setUp(self):
         super(MergerTestCase, self).setUp()
