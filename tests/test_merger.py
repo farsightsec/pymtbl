@@ -1,6 +1,5 @@
 
 import os
-import unittest
 
 import mtbl
 from . import MtblTestCase
