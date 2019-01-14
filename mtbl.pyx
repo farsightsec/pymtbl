@@ -1,3 +1,17 @@
+#cython: embedsignature=True
+# Copyright (c) 2015-2019 by Farsight Security, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 include "mtbl.pxi"
 import threading
 
@@ -36,7 +50,10 @@ def varint_length_packed(bytes py_buf):
     cdef uint8_t *buf
     cdef Py_ssize_t len_buf
     cdef size_t sz
-    PyString_AsStringAndSize(py_buf, <char **> &buf, &len_buf)
+    t = py_buf
+    buf = t
+    len_buf = len(t)
+    #PyString_AsStringAndSize(py_buf, <char **> &buf, &len_buf)
     with nogil:
         sz = mtbl_varint_length_packed(buf, len_buf)
     if sz == 0:
@@ -49,15 +66,19 @@ def varint_encode(long v):
     cdef size_t sz
     with nogil:
         sz = mtbl_varint_encode64(buf, v)
-    return PyString_FromStringAndSize(<char *> buf, sz)
+    return buf[:sz]
+    #return PyString_FromStringAndSize(<char *> buf, sz)
 
 def varint_decode(bytes py_buf):
     """varint_decode(b) -> decode variable-width packed integer from b"""
     cdef uint64_t val
-    cdef uint8_t *buf
+    cdef const uint8_t *buf
     cdef Py_ssize_t len_buf
     cdef size_t bytes_read
-    PyString_AsStringAndSize(py_buf, <char **> &buf, &len_buf)
+    #PyString_AsStringAndSize(py_buf, <char **> &buf, &len_buf)
+    t = py_buf
+    buf = t
+    len_buf = len(t)
     if mtbl_varint_length_packed(buf, len_buf) == 0:
         raise VarintDecodingError
     with nogil:
@@ -84,8 +105,8 @@ cdef class iterkeys(object):
 
     def __next__(self):
         cdef mtbl_res res
-        cdef uint8_t *key
-        cdef uint8_t *val
+        cdef const uint8_t *key
+        cdef const uint8_t *val
         cdef size_t len_key
         cdef size_t len_val
 
@@ -96,7 +117,8 @@ cdef class iterkeys(object):
             res = mtbl_iter_next(self._instance, &key, &len_key, &val, &len_val)
         if res == mtbl_res_failure:
             raise StopIteration
-        return PyString_FromStringAndSize(<char *> key, len_key)
+        return key[:len_key]
+        #return PyString_FromStringAndSize(<char *> key, len_key)
 
 @cython.internal
 cdef class itervalues(object):
@@ -118,8 +140,8 @@ cdef class itervalues(object):
 
     def __next__(self):
         cdef mtbl_res res
-        cdef uint8_t *key
-        cdef uint8_t *val
+        cdef const uint8_t *key
+        cdef const uint8_t *val
         cdef size_t len_key
         cdef size_t len_val
 
@@ -130,7 +152,8 @@ cdef class itervalues(object):
             res = mtbl_iter_next(self._instance, &key, &len_key, &val, &len_val)
         if res == mtbl_res_failure:
             raise StopIteration
-        return PyString_FromStringAndSize(<char *> val, len_val)
+        return val[:len_val]
+        #return PyString_FromStringAndSize(<char *> val, len_val)
 
 @cython.internal
 cdef class iteritems(object):
@@ -152,8 +175,8 @@ cdef class iteritems(object):
 
     def __next__(self):
         cdef mtbl_res res
-        cdef uint8_t *key
-        cdef uint8_t *val
+        cdef const uint8_t *key
+        cdef const uint8_t *val
         cdef size_t len_key
         cdef size_t len_val
 
@@ -166,8 +189,9 @@ cdef class iteritems(object):
         if res == mtbl_res_failure:
             raise StopIteration
 
-        return (PyString_FromStringAndSize(<char *> key, len_key),
-                PyString_FromStringAndSize(<char *> val, len_val))
+        return (key[:len_key], val[:len_val])
+#        return (PyString_FromStringAndSize(<char *> key, len_key),
+#                PyString_FromStringAndSize(<char *> val, len_val))
 
 cdef get_iterkeys(parent, mtbl_iter *instance):
     it = iterkeys(parent)
@@ -240,13 +264,15 @@ cdef class reader(DictMixin):
         with nogil:
             mtbl_reader_destroy(&self._instance)
 
-    def __init__(self, char * fname, bool verify_checksums=False):
+    def __init__(self, str fname, bool verify_checksums=False):
         cdef mtbl_reader_options *opt
+        cdef bytes tfn_bytes = fname.encode()
+        cdef char *tfn = tfn_bytes
 
         with nogil:
             opt = mtbl_reader_options_init()
             mtbl_reader_options_set_verify_checksums(opt, verify_checksums)
-            self._instance = mtbl_reader_init(fname, opt)
+            self._instance = mtbl_reader_init(tfn, opt)
             mtbl_reader_options_destroy(&opt)
 
         if (self._instance == NULL):
@@ -298,17 +324,19 @@ cdef class reader(DictMixin):
         between key0 and key1 inclusive.
         """
         cdef mtbl_res res
-        cdef uint8_t *key0
-        cdef uint8_t *key1
+        cdef const uint8_t *key0
+        cdef const uint8_t *key1
         cdef size_t len_key0
         cdef size_t len_key1
 
         self.check_initialized()
 
-        key0 = <uint8_t *> PyString_AsString(py_key0)
-        key1 = <uint8_t *> PyString_AsString(py_key1)
-        len_key0 = PyString_Size(py_key0)
-        len_key1 = PyString_Size(py_key1)
+        t = py_key0
+        key0 = <uint8_t *> t
+        t = py_key1
+        key1 = <uint8_t *> t
+        len_key0 = len(py_key0)
+        len_key1 = len(py_key1)
 
         return get_iteritems(self, mtbl_source_get_range(
             mtbl_reader_source(self._instance), key0, len_key0, key1, len_key1))
@@ -319,13 +347,14 @@ cdef class reader(DictMixin):
         begins with key_prefix.
         """
         cdef mtbl_res res
-        cdef uint8_t *key
+        cdef const uint8_t *key
         cdef size_t len_key
 
         self.check_initialized()
 
-        key = <uint8_t *> PyString_AsString(py_key)
-        len_key = PyString_Size(py_key)
+        t = py_key
+        key = <uint8_t *> t
+        len_key = len(py_key)
 
         return get_iteritems(self, mtbl_source_get_prefix(
             mtbl_reader_source(self._instance), key, len_key))
@@ -333,15 +362,16 @@ cdef class reader(DictMixin):
     def __getitem__(self, bytes py_key):
         cdef mtbl_iter *it
         cdef mtbl_res res
-        cdef uint8_t *key
-        cdef uint8_t *val
+        cdef const uint8_t *key
+        cdef const uint8_t *val
         cdef size_t len_key
         cdef size_t len_val
 
         self.check_initialized()
 
-        key = <uint8_t *> PyString_AsString(py_key)
-        len_key = PyString_Size(py_key)
+        t = py_key
+        key = <uint8_t *> t
+        len_key = len(py_key)
 
         items = []
         with nogil:
@@ -353,7 +383,7 @@ cdef class reader(DictMixin):
                 res = mtbl_iter_next(it, &key, &len_key, &val, &len_val)
             if res == mtbl_res_failure:
                 break
-            items.append(PyString_FromStringAndSize(<char *> val, len_val))
+            items.append(val[:len_val])
         with nogil:
             mtbl_iter_destroy(&it)
         if not items:
@@ -380,7 +410,7 @@ cdef class writer(object):
             mtbl_writer_destroy(&self._instance)
 
     def __init__(self,
-            char * fname,
+            str fname,
             mtbl_compression_type compression=COMPRESSION_NONE,
             size_t block_size=8192,
             size_t block_restart_interval=16):
@@ -393,13 +423,16 @@ cdef class writer(object):
 
         self._lock = threading.Semaphore()
 
+        cdef bytes tfn_bytes = fname.encode()
+        cdef char *tfn = tfn_bytes
         cdef mtbl_writer_options *opt
+
         with nogil:
             opt = mtbl_writer_options_init()
             mtbl_writer_options_set_compression(opt, compression)
             mtbl_writer_options_set_block_size(opt, block_size)
             mtbl_writer_options_set_block_restart_interval(opt, block_restart_interval)
-            self._instance = mtbl_writer_init(fname, opt)
+            self._instance = mtbl_writer_init(tfn, opt)
             mtbl_writer_options_destroy(&opt)
         if self._instance == NULL:
             raise IOError("unable to initialize file: '%s'" % fname)
@@ -419,18 +452,18 @@ cdef class writer(object):
         written key.
         """
         cdef mtbl_res res
-        cdef uint8_t *key
-        cdef uint8_t *val
+        cdef const uint8_t *key
+        cdef const uint8_t *val
         cdef size_t len_key
         cdef size_t len_val
 
         if self._instance == NULL:
             raise TableClosedException
 
-        key = <uint8_t *> PyString_AsString(py_key)
-        val = <uint8_t *> PyString_AsString(py_val)
-        len_key = PyString_Size(py_key)
-        len_val = PyString_Size(py_val)
+        key = <uint8_t *> py_key
+        val = <uint8_t *> py_val
+        len_key = len(py_key)
+        len_val = len(py_val)
 
         with self._lock:
             with nogil:
@@ -448,17 +481,19 @@ cdef void merge_func_wrapper(void *clos,
         uint8_t *val0, size_t len_val0,
         uint8_t *val1, size_t len_val1,
         uint8_t **merged_val, size_t *len_merged_val) with gil:
-    cdef str py_key
-    cdef str py_val0
-    cdef str py_val1
-    cdef str py_merged_val
-    py_key = PyString_FromStringAndSize(<char *> key, len_key)
-    py_val0 = PyString_FromStringAndSize(<char *> val0, len_val0)
-    py_val1 = PyString_FromStringAndSize(<char *> val1, len_val1)
+    cdef bytes py_key
+    cdef bytes py_val0
+    cdef bytes py_val1
+    cdef bytes py_merged_val
+    py_key = key[:len_key]
+    py_val0 = val0[:len_val0]
+    py_val1 = val1[:len_val1]
+
     py_merged_val = (<object> clos)(py_key, py_val0, py_val1)
-    len_merged_val[0] = <size_t> PyString_Size(py_merged_val)
+    len_merged_val[0] = <size_t> len(py_merged_val)
     merged_val[0] = <uint8_t *> malloc(len_merged_val[0])
-    memcpy(merged_val[0], PyString_AsString(py_merged_val), len_merged_val[0])
+    t = py_merged_val
+    memcpy(merged_val[0], <const void *>t, len_merged_val[0])
 
 cdef class merger(object):
     """
@@ -531,11 +566,12 @@ cdef class merger(object):
         M.get(key) -> an iterator over all (key, value) items in M which match key.
         """
         cdef mtbl_res res
-        cdef uint8_t *key
+        cdef const uint8_t *key
         cdef size_t len_key
 
-        key = <uint8_t *> PyString_AsString(py_key)
-        len_key = PyString_Size(py_key)
+        t = py_key
+        key = <uint8_t *> t
+        len_key = len(py_key)
 
         return get_iteritems(self,
                 mtbl_source_get(mtbl_merger_source(self._instance), key, len_key))
@@ -546,15 +582,17 @@ cdef class merger(object):
         between key0 and key1 inclusive.
         """
         cdef mtbl_res res
-        cdef uint8_t *key0
-        cdef uint8_t *key1
+        cdef const uint8_t *key0
+        cdef const uint8_t *key1
         cdef size_t len_key0
         cdef size_t len_key1
 
-        key0 = <uint8_t *> PyString_AsString(py_key0)
-        key1 = <uint8_t *> PyString_AsString(py_key1)
-        len_key0 = PyString_Size(py_key0)
-        len_key1 = PyString_Size(py_key1)
+        t = py_key0
+        key0 = <uint8_t *> t
+        t = py_key1
+        key1 = <uint8_t *> t
+        len_key0 = len(py_key0)
+        len_key1 = len(py_key1)
 
         return get_iteritems(self, mtbl_source_get_range(
             mtbl_merger_source(self._instance), key0, len_key0, key1, len_key1))
@@ -565,11 +603,12 @@ cdef class merger(object):
         begins with key_prefix.
         """
         cdef mtbl_res res
-        cdef uint8_t *key
+        cdef const uint8_t *key
         cdef size_t len_key
 
-        key = <uint8_t *> PyString_AsString(py_key)
-        len_key = PyString_Size(py_key)
+        t = py_key
+        key = <uint8_t *> t
+        len_key = len(py_key)
 
         return get_iteritems(self, mtbl_source_get_prefix(
             mtbl_merger_source(self._instance), key, len_key))
@@ -600,7 +639,7 @@ cdef class sorter(object):
 
     def __init__(self,
                  object merge_func,
-                 bytes temp_dir=DEFAULT_SORTER_TEMP_DIR,
+                 str temp_dir=DEFAULT_SORTER_TEMP_DIR,
                  size_t max_memory=DEFAULT_SORTER_MEMORY):
         cdef mtbl_sorter_options *opt
         self._lock = threading.Semaphore()
@@ -612,7 +651,7 @@ cdef class sorter(object):
                                            <mtbl_merge_func> merge_func_wrapper,
                                            <void *> merge_func)
 
-        mtbl_sorter_options_set_temp_dir(opt, temp_dir)
+        mtbl_sorter_options_set_temp_dir(opt, temp_dir.encode('UTF-8'))
         mtbl_sorter_options_set_max_memory(opt, max_memory)
         with nogil:
             self._instance = mtbl_sorter_init(opt)
@@ -637,18 +676,20 @@ cdef class sorter(object):
         conflicting values.
         """
         cdef mtbl_res res
-        cdef uint8_t *key
-        cdef uint8_t *val
+        cdef const uint8_t *key
+        cdef const uint8_t *val
         cdef size_t len_key
         cdef size_t len_val
 
         if self._instance == NULL:
             raise RuntimeError
 
-        key = <uint8_t *> PyString_AsString(py_key)
-        val = <uint8_t *> PyString_AsString(py_val)
-        len_key = PyString_Size(py_key)
-        len_val = PyString_Size(py_val)
+        t = py_key
+        key = <uint8_t *> t
+        t = py_val
+        val = <uint8_t *> t
+        len_key = len(py_key)
+        len_val = len(py_val)
 
         with self._lock:
             with nogil:
