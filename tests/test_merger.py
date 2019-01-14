@@ -1,4 +1,16 @@
-
+# Copyright (c) 2015-2019 by Farsight Security, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import os
 
 import mtbl
@@ -6,7 +18,7 @@ from . import MtblTestCase
 
 
 def merge_func(key, val0, val1):
-    return val0 + ' ' + val1
+    return val0 + b' ' + val1
 
 
 class MergerTestCase(MtblTestCase):
@@ -17,9 +29,9 @@ class MergerTestCase(MtblTestCase):
         self.mtbls_to_merge = []
         for filename, tuples in [
                 ('left.mtbl',
-                 [('key1', 'val1'), ('key2', 'val2'), ('key3', 'val3')]),
+                 [(b'key1', b'val1'), (b'key2', b'val2'), (b'key3', b'val3')]),
                 ('right.mtbl',
-                 [('key17', 'val17'), ('key23', 'val23'), ('key4', 'val4')]),
+                 [(b'key17', b'val17'), (b'key23', b'val23'), (b'key4', b'val4')]),
         ]:
             mtbl = self.write_mtbl(filename, tuples)
             self.mtbls_to_merge.append(mtbl)
@@ -42,12 +54,12 @@ class MergerTestCase(MtblTestCase):
         result = list(reader.iteritems())
         self.assertEqual(
             [
-                ('key1', 'val1'),
-                ('key17', 'val17'),
-                ('key2', 'val2'),
-                ('key23', 'val23'),
-                ('key3', 'val3'),
-                ('key4', 'val4'),
+                (b'key1', b'val1'),
+                (b'key17', b'val17'),
+                (b'key2', b'val2'),
+                (b'key23', b'val23'),
+                (b'key3', b'val3'),
+                (b'key4', b'val4'),
             ],
             result,
         )
