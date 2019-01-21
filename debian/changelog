@@ -1,3 +1,10 @@
+pymtbl (1.0.0) unstable; urgency=medium
+
+  * Add Python3 compatibility
+  * Add unit tests
+
+ -- Farsight Security, Inc. <software@fsi.io>  Mon, 21 Jan 2019 19:44:02 +0000
+
 pymtbl (0.4.0-1) unstable; urgency=medium
 
   * New upstream release.
