@@ -42,7 +42,11 @@ def main(txt_fname, mtbl_fname):
            line.startswith('*** END OF THIS PROJECT GUTENBERG EBOOK'):
             break
         for tok in line.strip().split():
-            word = tok.strip(string.punctuation).lower().encode()
+            try:
+                word = tok.strip(string.punctuation).lower().encode()
+            except UnicodeDecodeError:
+                # Don't need to encode() in py2 becase 'str' is a synonym for 'bytes' so we can already use it as a key
+                word = tok.strip(string.punctuation).lower() #py2
             sorter[word] = mtbl.varint_encode(1)
 
     sorter.write(writer)

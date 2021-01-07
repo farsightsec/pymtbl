@@ -23,7 +23,7 @@ def main(mtbl_fname):
     for k, v in reader.items():
         word = k
         count = mtbl.varint_decode(v)
-        print('%s\t%s' % (count, word.decode()))
+        print('%s\t%s' % (count, word))
 
 
 if __name__ == '__main__':
