@@ -24,10 +24,7 @@ import mtbl
 report_interval = 100000
 megabyte = 1048576.0
 
-try:
-    maxint = sys.maxint  # py2
-except:
-    maxint = sys.maxsize  # py3
+maxint = sys.maxsize
 
 
 def merge_func(key, val0, val1):
