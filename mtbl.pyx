@@ -265,7 +265,7 @@ cdef class reader(DictMixin):
 
     def __init__(self, str fname, bool verify_checksums=False):
         cdef mtbl_reader_options *opt
-        cdef bytes tfn_bytes = fname.encode()
+        cdef bytes tfn_bytes = fname.encode('utf-8')
         cdef char *tfn = tfn_bytes
 
         with nogil:
@@ -422,7 +422,7 @@ cdef class writer(object):
 
         self._lock = threading.Semaphore()
 
-        cdef bytes tfn_bytes = fname.encode()
+        cdef bytes tfn_bytes = fname.encode('utf-8')
         cdef char *tfn = tfn_bytes
         cdef mtbl_writer_options *opt
 
@@ -655,7 +655,7 @@ cdef class sorter(object):
                                            <mtbl_merge_func> merge_func_wrapper,
                                            <void *> merge_func)
 
-        mtbl_sorter_options_set_temp_dir(opt, temp_dir.encode('UTF-8'))
+        mtbl_sorter_options_set_temp_dir(opt, temp_dir.encode('utf-8'))
         mtbl_sorter_options_set_max_memory(opt, max_memory)
         with nogil:
             self._instance = mtbl_sorter_init(opt)
