@@ -41,6 +41,7 @@ class TestVarint(unittest.TestCase):
         assert 2 == varint_length_packed(varint_encode(1000))
         assert 4 == varint_length_packed(bytearray(b'\xc4\xb8\xd30\x00\x00\x00'))
         assert 4 == varint_length_packed(b'\xc4\xb8\xd30\x00\x00\x00')
+        assert 1 == varint_length_packed('foo')
 
     def test_insitu_decode(self):
         assert 102030404 == varint_decode(bytearray(b'\xc4\xb8\xd30\x00\x00\x00'))

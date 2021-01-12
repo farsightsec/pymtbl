@@ -24,14 +24,18 @@ class WriterTestCase(unittest.TestCase):
             os.path.dirname(__file__), 'example.mtbl')
         writer = mtbl.writer(filepath, compression=mtbl.COMPRESSION_NONE)
         self.addCleanup(os.remove, filepath)
-        writer[b'key1'] = b'val1'
-        writer[b'key17'] = b'val17'
-        writer[b'key2'] = b'val2'
-        writer[b'key23'] = b'val23'
+        writer[b'key1'] = 'val1'
+        writer['key17'] = b'val17'
+        writer['key2'] = 'val2'
+        writer['key23'] = 'val23'
         writer[b'key3'] = b'val3'
         writer[b'key4'] = b'val4'
         with self.assertRaises(mtbl.KeyOrderError):
+            writer['key05'] = 'val05'
+        with self.assertRaises(mtbl.KeyOrderError):
             writer[b'key05'] = b'val05'
+        # this one should not raise mtbl.KeyOrderError
+        writer['key5'] = 'key5'
 
 
 class ReaderTestCase(unittest.TestCase):

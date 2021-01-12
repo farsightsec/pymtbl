@@ -42,6 +42,21 @@ class VarintDecodingError(Exception):
 
 ImmutableError = TypeError('object does not support mutation')
 
+def to_bytes(value):
+    """
+    to_bytes(v) -> return a bytes object from a bytes, str, and bytearray; raises a ValueError if the conversion fails
+    """
+    # bytes needs to be before str because in py2 str is already bytes
+    if isinstance(value, bytes):
+        b = value
+    elif isinstance(value, str):
+        b = value.encode()
+    elif isinstance(value, bytearray):
+        b = bytes(value)
+    else:
+        raise ValueError('Only str, bytes, and bytearrays are allowed.')
+    return b
+
 def varint_length(uint64_t value):
     """varint_length(v) -> number of bytes the integer v would require in varint encoding."""
     return mtbl_varint_length(value)
@@ -52,8 +67,7 @@ def varint_length_packed(py_buf):
     cdef Py_ssize_t len_buf
     cdef size_t sz
     len_buf = len(py_buf)
-    if type(py_buf) == bytearray or type(py_buf) == str:
-        py_buf = bytes(py_buf)
+    py_buf = to_bytes(py_buf)
     buf = py_buf
     with nogil:
         sz = mtbl_varint_length_packed(buf, len_buf)
@@ -459,10 +473,8 @@ cdef class writer(object):
         if self._instance == NULL:
             raise TableClosedException
 
-        if type(py_key) == bytearray or type(py_key) == str:
-            py_key = bytes(py_key)
-        if type(py_val) == bytearray or type(py_val) == str:
-            py_val = bytes(py_val)
+        py_key = to_bytes(py_key)
+        py_val = to_bytes(py_val)
 
         key = <uint8_t *> py_key
         val = <uint8_t *> py_val
@@ -688,10 +700,8 @@ cdef class sorter(object):
         if self._instance == NULL:
             raise RuntimeError
 
-        if type(py_key) == bytearray or type(py_key) == str:
-            py_key = bytes(py_key)
-        if type(py_val) == bytearray or type(py_val) == str:
-            py_val = bytes(py_val)
+        py_key = to_bytes(py_key)
+        py_val = to_bytes(py_val)
 
         t = py_key
         key = <uint8_t *> t
