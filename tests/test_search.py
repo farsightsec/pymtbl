@@ -27,25 +27,28 @@ class SearchTestCase(MtblTestCase):
         self.write_mtbl(
             self.filepath,
             [
-                (b'key1', b'val1'),
-                (b'key17', b'val17'),
-                (b'key2', b'val2'),
-                (b'key23', b'val23'),
-                (b'key3', b'val3'),
-                (b'key4', b'val4'),
+                ('key1', 'val1'),
+                ('key17', 'val17'),
+                ('key2', 'val2'),
+                ('key23', 'val23'),
+                ('key3', 'val3'),
+                ('key4', 'val4'),
             ],
         )
 
     def test_in(self):
         reader = mtbl.reader(self.filepath, verify_checksums=True)
         self.assertTrue(b'key23' in reader)
-        self.assertEqual([b'val23'], reader[b'key23'])
+        self.assertEqual(['val23'], reader['key23'])
 
     def test_not_in(self):
         reader = mtbl.reader(self.filepath, verify_checksums=True)
         self.assertTrue(b'keyfoo' not in reader)
+        self.assertTrue('keyfoo' not in reader)
 
     def test_not_in_raises_keyerror(self):
         reader = mtbl.reader(self.filepath, verify_checksums=True)
         with self.assertRaises(KeyError):
             reader[b'keyfoo']
+        with self.assertRaises(KeyError):
+            reader['keyfoo']
