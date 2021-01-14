@@ -57,6 +57,20 @@ def to_bytes(value):
         raise ValueError('Only str, bytes, and bytearrays are allowed.')
     return b
 
+def from_bytes(bytes value):
+    """
+    from_bytes(v) -> given bytes returns str by UTF-8 decoding it. returns the bytes unchanged if decoding 
+    fails
+    """
+    if isinstance(value, str): #py2
+        v = value
+    else: #py3
+        try:
+            v = value.decode('utf-8')
+        except UnicodeDecodeError:
+            v = value
+    return v
+
 def varint_length(uint64_t value):
     """varint_length(v) -> number of bytes the integer v would require in varint encoding."""
     return mtbl_varint_length(value)
@@ -134,7 +148,7 @@ cdef class iterkeys(object):
             res = mtbl_iter_next(self._instance, &key, &len_key, &val, &len_val)
         if res == mtbl_res_failure:
             raise StopIteration
-        return <bytes> key[:len_key]
+        return from_bytes(key[:len_key])
 
 @cython.internal
 cdef class itervalues(object):
@@ -168,7 +182,7 @@ cdef class itervalues(object):
             res = mtbl_iter_next(self._instance, &key, &len_key, &val, &len_val)
         if res == mtbl_res_failure:
             raise StopIteration
-        return <bytes> val[:len_val]
+        return from_bytes(val[:len_val])
 
 @cython.internal
 cdef class iteritems(object):
@@ -204,7 +218,7 @@ cdef class iteritems(object):
         if res == mtbl_res_failure:
             raise StopIteration
 
-        return (<bytes> key[:len_key], <bytes> val[:len_val])
+        return (from_bytes(key[:len_key]), from_bytes(val[:len_val]))
 
 cdef get_iterkeys(parent, mtbl_iter *instance):
     it = iterkeys(parent)
@@ -396,7 +410,7 @@ cdef class reader(DictMixin):
                 res = mtbl_iter_next(it, &key, &len_key, &val, &len_val)
             if res == mtbl_res_failure:
                 break
-            items.append(val[:len_val])
+            items.append(from_bytes(val[:len_val]))
         with nogil:
             mtbl_iter_destroy(&it)
         if not items:
@@ -505,7 +519,7 @@ cdef void merge_func_wrapper(void *clos,
     py_val0 = val0[:len_val0]
     py_val1 = val1[:len_val1]
 
-    py_merged_val = (<object> clos)(py_key, py_val0, py_val1)
+    py_merged_val = to_bytes((<object> clos)(from_bytes(py_key), from_bytes(py_val0), from_bytes(py_val1)))
     len_merged_val[0] = <size_t> len(py_merged_val)
     merged_val[0] = <uint8_t *> malloc(len_merged_val[0])
     t = py_merged_val
