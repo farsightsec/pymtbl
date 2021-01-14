@@ -324,7 +324,7 @@ cdef class reader(DictMixin):
         self.check_initialized()
         return get_iteritems(self, mtbl_source_iter(mtbl_reader_source(self._instance)))
 
-    def __contains__(self, bytes py_key):
+    def __contains__(self, py_key):
         """R.__contains__(k) -> True if R has a key k, else False"""
         try:
             self.__getitem__(py_key)
@@ -333,11 +333,11 @@ cdef class reader(DictMixin):
             pass
         return False
 
-    def has_key(self, bytes py_key):
+    def has_key(self, py_key):
         """R.has_key(k) -> True if R has a key k, else False."""
         return self.__contains__(py_key)
 
-    def get(self, bytes py_key, default=None):
+    def get(self, py_key, default=None):
         """R.get(k[,d]) -> R[k] if k in R, else d.  d defaults to None."""
         try:
             return self.__getitem__(py_key)
@@ -345,7 +345,7 @@ cdef class reader(DictMixin):
             pass
         return default
 
-    def get_range(self, bytes py_key0, bytes py_key1):
+    def get_range(self, py_key0, py_key1):
         """
         R.get_range(key0, key1) -> an iterator over all (key, value) items in R where key is
         between key0 and key1 inclusive.
@@ -358,17 +358,17 @@ cdef class reader(DictMixin):
 
         self.check_initialized()
 
-        t = py_key0
+        t = to_bytes(py_key0)
         key0 = <uint8_t *> t
-        t = py_key1
-        key1 = <uint8_t *> t
-        len_key0 = len(py_key0)
-        len_key1 = len(py_key1)
+        len_key0 = len(t)
+        t = to_bytes(py_key1)
+        key1 = <uint8_t *> t        
+        len_key1 = len(t)
 
         return get_iteritems(self, mtbl_source_get_range(
             mtbl_reader_source(self._instance), key0, len_key0, key1, len_key1))
 
-    def get_prefix(self, bytes py_key):
+    def get_prefix(self, py_key):
         """
         R.get_prefix(key_prefix) -> an iterator over all (key, value) items in R where key
         begins with key_prefix.
@@ -379,14 +379,14 @@ cdef class reader(DictMixin):
 
         self.check_initialized()
 
-        t = py_key
+        t = to_bytes(py_key)
         key = <uint8_t *> t
-        len_key = len(py_key)
+        len_key = len(t)
 
         return get_iteritems(self, mtbl_source_get_prefix(
             mtbl_reader_source(self._instance), key, len_key))
 
-    def __getitem__(self, bytes py_key):
+    def __getitem__(self, py_key):
         cdef mtbl_iter *it
         cdef mtbl_res res
         cdef const uint8_t *key
@@ -396,9 +396,9 @@ cdef class reader(DictMixin):
 
         self.check_initialized()
 
-        t = py_key
+        t = to_bytes(py_key)        
         key = <uint8_t *> t
-        len_key = len(py_key)
+        len_key = len(t)
 
         items = []
         with nogil:

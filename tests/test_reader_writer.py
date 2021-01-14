@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) 2015-2019 by Farsight Security, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,41 +42,120 @@ class WriterTestCase(unittest.TestCase):
 class ReaderTestCase(unittest.TestCase):
 
     def setUp(self):
-        super(ReaderTestCase, self).setUp()
         # write our test mtbl
         self.filepath = os.path.join(
             os.path.dirname(__file__), 'example.mtbl')
         writer = mtbl.writer(self.filepath, compression=mtbl.COMPRESSION_NONE)
         self.addCleanup(os.remove, self.filepath)
+        
+        writer[b'\x00'] = b'\x01'
+        writer[b'\x61'] = b'a'
+        writer['key0'] = b'\xff'
         writer[b'key1'] = b'val1'
         writer[b'key17'] = b'val17'
         writer[b'key2'] = b'val2'
         writer[b'key23'] = b'val23'
         writer[b'key3'] = b'val3'
-        writer[b'key4'] = b'val4'
+        writer[b'\x90N'] = b'\xaa'
+        writer['你好，世界'] = 'hello world'
         writer.close()
 
+        self.reader = mtbl.reader(self.filepath, verify_checksums=True)
+    
+    def test_has_key_true(self):
+        self.assertTrue(self.reader.has_key('a'))
+        self.assertTrue(self.reader.has_key(b'\x61'))
+        self.assertTrue(self.reader.has_key('key17'))
+        self.assertTrue(self.reader.has_key(b'key17'))
+    
+    def test_has_key_false(self):        
+        self.assertFalse(self.reader.has_key('key42'))
+        self.assertFalse(self.reader.has_key(b'key42'))
+        self.assertFalse(self.reader.has_key('nope'))
+    
+    def test_get(self):        
+        self.assertEqual(self.reader.get('你好，世界'), ['hello world'])
+        self.assertEqual(self.reader.get('a'), ['a'])
+        self.assertEqual(self.reader.get(b'\x61'), ['a'])   
+        self.assertEqual(self.reader.get(b'\x90N'), [b'\xaa'])
+    
+    def test_get_keyerror_returns_none(self):
+        self.assertEqual(self.reader.get('nope'), None)
+
+    def test_get_default(self):
+        expected = 'foobar'
+        self.assertEqual(self.reader.get('nope', expected), expected)
+
     def test_get_range(self):
-        reader = mtbl.reader(self.filepath, verify_checksums=True)
-        result = list(reader.get_range(b'key19', b'key23'))
-        self.assertEqual([(b'key2', b'val2'), (b'key23', b'val23')], result)
+        result = list(self.reader.get_range('key19', 'key23'))
+        self.assertEqual([('key2', 'val2'), ('key23', 'val23')], result)
 
     def test_get_prefix(self):
-        reader = mtbl.reader(self.filepath, verify_checksums=True)
-        result = list(reader.get_prefix(b'key2'))
-        self.assertEqual([(b'key2', b'val2'), (b'key23', b'val23')], result)
-
-    def test_iteritems(self):
-        reader = mtbl.reader(self.filepath, verify_checksums=True)
-        result = list(reader.iteritems())
+        result = list(self.reader.get_prefix(b'key2'))
+        self.assertEqual([('key2', 'val2'), ('key23', 'val23')], result)
+    
+    def test_get_prefix_string(self):
+        result = list(self.reader.get_prefix('key'))
         self.assertEqual(
             [
-                (b'key1', b'val1'),
-                (b'key17', b'val17'),
-                (b'key2', b'val2'),
-                (b'key23', b'val23'),
-                (b'key3', b'val3'),
-                (b'key4', b'val4'),
+                ('key0', b'\xff'),
+                ('key1', 'val1'),
+                ('key17', 'val17'),                
+                ('key2', 'val2'),
+                ('key23', 'val23'),
+                ('key3', 'val3'),
+            ], result)
+    
+    def test_iterkeys(self):
+        result = list(self.reader.iterkeys())
+        self.assertEqual(
+            [
+                '\x00',                
+                'a',
+                'key0',
+                'key1',
+                'key17',
+                'key2',
+                'key23',
+                'key3',
+                b'\x90N',
+                '你好，世界',
+            ],
+            result,
+        )
+    
+    def test_itervalues(self):
+        result = list(self.reader.itervalues())
+        self.assertEqual(
+            [
+                '\x01',                
+                'a',
+                b'\xff',
+                'val1',
+                'val17',
+                'val2',
+                'val23',
+                'val3',
+                b'\xaa',
+                'hello world',
+            ],
+            result,
+        )
+
+    def test_iteritems(self):
+        result = list(self.reader.iteritems())
+        self.assertEqual(
+            [
+                ('\x00', '\x01'),                
+                ('a', 'a'),
+                ('key0', b'\xff'),
+                ('key1', 'val1'),
+                ('key17', 'val17'),
+                ('key2', 'val2'),
+                ('key23', 'val23'),
+                ('key3', 'val3'),
+                (b'\x90N', b'\xaa'),
+                ('你好，世界', 'hello world'),
             ],
             result,
         )
