@@ -24,19 +24,20 @@ def merge_func(key, val0, val1):
 class MergerTestCase(MtblTestCase):
 
     def setUp(self):
-        super(MergerTestCase, self).setUp()
-        # write two mtbls to be merged
+        super(MergerTestCase, self).setUp()       
+
+    def test_merge_and_iteritems_no_merge(self):
+        # write two mtbls that don't have the same keys
         self.mtbls_to_merge = []
         for filename, tuples in [
                 ('left.mtbl',
-                 [(b'key1', b'val1'), (b'key2', b'val2'), (b'key3', b'val3')]),
+                 [('key1', 'val1'), ('key2', 'val2'), ('key3', 'val3')]),
                 ('right.mtbl',
-                 [(b'key17', b'val17'), (b'key23', b'val23'), (b'key4', b'val4')]),
+                 [('key17', 'val17'), ('key23', 'val23'), ('key4', 'val4')]),
         ]:
-            mtbl = self.write_mtbl(filename, tuples)
-            self.mtbls_to_merge.append(mtbl)
-
-    def test_merge_and_iteritems(self):
+            m = self.write_mtbl(filename, tuples)
+            self.mtbls_to_merge.append(m)
+        # create the merged mtbl
         merger = mtbl.merger(merge_func)
         merged_filename = os.path.join(
             os.path.dirname(__file__), 'merged.mtbl')
@@ -54,12 +55,49 @@ class MergerTestCase(MtblTestCase):
         result = list(reader.iteritems())
         self.assertEqual(
             [
-                (b'key1', b'val1'),
-                (b'key17', b'val17'),
-                (b'key2', b'val2'),
-                (b'key23', b'val23'),
-                (b'key3', b'val3'),
-                (b'key4', b'val4'),
+                ('key1', 'val1'),
+                ('key17', 'val17'),
+                ('key2', 'val2'),
+                ('key23', 'val23'),
+                ('key3', 'val3'),
+                ('key4', 'val4'),
+            ],
+            result,
+        )
+    
+
+    def test_merge_and_iteritems_with_merge(self):
+        # write two mtbls with the same keys
+        self.mtbls_to_merge = []
+        for filename, tuples in [
+                ('left.mtbl',
+                 [('key1', 'val1'), ('key2', 'val2'), ('key3', 'val3')]),
+                ('right.mtbl',
+                 [('key1', 'val12'), ('key2', 'val22'), ('key3', 'val32')]),
+        ]:
+            m = self.write_mtbl(filename, tuples)
+            self.mtbls_to_merge.append(m)
+        # create the merged mtbl
+        merger = mtbl.merger(merge_func)
+        merged_filename = os.path.join(
+            os.path.dirname(__file__), 'merged.mtbl')
+        writer = mtbl.writer(
+            merged_filename, compression=mtbl.COMPRESSION_NONE)
+        self.addCleanup(os.remove, merged_filename)
+        # write a merged mtbl
+        for filename in self.mtbls_to_merge:
+            merger.add_reader(mtbl.reader(filename))
+        for k, v in merger.iteritems():
+            writer[k] = v
+        writer.close()
+        # check that our results merged as expected
+        reader = mtbl.reader(merged_filename, verify_checksums=True)
+        result = list(reader.iteritems())
+        self.assertEqual(
+            [
+                ('key1', 'val1 val12'),
+                ('key2', 'val2 val22'),
+                ('key3', 'val3 val32'),
             ],
             result,
         )
