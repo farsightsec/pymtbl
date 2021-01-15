@@ -17,26 +17,21 @@ import mtbl
 from . import MtblTestCase
 
 
-def merge_func(key, val0, val1):
+def merge_func_str(key, val0, val1):
     return val0 + ' ' + val1
+
+def merge_func_ints(_, val0, val1):
+    i0 = mtbl.varint_decode(val0)
+    i1 = mtbl.varint_decode(val1)
+    return mtbl.varint_encode(i0 + i1)
 
 
 class MergerTestCase(MtblTestCase):
 
     def setUp(self):
-        super(MergerTestCase, self).setUp()       
+        super(MergerTestCase, self).setUp()
 
-    def test_merge_and_iteritems_no_merge(self):
-        # write two mtbls that don't have the same keys
-        self.mtbls_to_merge = []
-        for filename, tuples in [
-                ('left.mtbl',
-                 [('key1', 'val1'), ('key2', 'val2'), ('key3', 'val3')]),
-                ('right.mtbl',
-                 [('key17', 'val17'), ('key23', 'val23'), ('key4', 'val4')]),
-        ]:
-            m = self.write_mtbl(filename, tuples)
-            self.mtbls_to_merge.append(m)
+    def do_merge(self, merge_func):
         # create the merged mtbl
         merger = mtbl.merger(merge_func)
         merged_filename = os.path.join(
@@ -50,9 +45,22 @@ class MergerTestCase(MtblTestCase):
         for k, v in merger.iteritems():
             writer[k] = v
         writer.close()
-        # check our results
+        # check that our results merged as expected
         reader = mtbl.reader(merged_filename, verify_checksums=True)
-        result = list(reader.iteritems())
+        return list(reader.iteritems())
+
+    def test_merge_and_iteritems_no_merge(self):
+        # write two mtbls that don't have the same keys
+        self.mtbls_to_merge = []
+        for filename, tuples in [
+                ('left.mtbl',
+                 [('key1', 'val1'), ('key2', 'val2'), ('key3', 'val3')]),
+                ('right.mtbl',
+                 [('key17', 'val17'), ('key23', 'val23'), ('key4', 'val4')]),
+        ]:
+            m = self.write_mtbl(filename, tuples)
+            self.mtbls_to_merge.append(m)
+        result = self.do_merge(merge_func_str)
         self.assertEqual(
             [
                 ('key1', 'val1'),
@@ -77,27 +85,34 @@ class MergerTestCase(MtblTestCase):
         ]:
             m = self.write_mtbl(filename, tuples)
             self.mtbls_to_merge.append(m)
-        # create the merged mtbl
-        merger = mtbl.merger(merge_func)
-        merged_filename = os.path.join(
-            os.path.dirname(__file__), 'merged.mtbl')
-        writer = mtbl.writer(
-            merged_filename, compression=mtbl.COMPRESSION_NONE)
-        self.addCleanup(os.remove, merged_filename)
-        # write a merged mtbl
-        for filename in self.mtbls_to_merge:
-            merger.add_reader(mtbl.reader(filename))
-        for k, v in merger.iteritems():
-            writer[k] = v
-        writer.close()
-        # check that our results merged as expected
-        reader = mtbl.reader(merged_filename, verify_checksums=True)
-        result = list(reader.iteritems())
+        result = self.do_merge(merge_func_str)
         self.assertEqual(
             [
                 ('key1', 'val1 val12'),
                 ('key2', 'val2 val22'),
                 ('key3', 'val3 val32'),
+            ],
+            result,
+        )
+    
+    def test_merge_with_ints(self):
+        # write two mtbls with the same keys
+        self.mtbls_to_merge = []
+        for filename, tuples in [
+                ('left.mtbl',
+                 [('key1', mtbl.varint_encode(1)), ('key2', mtbl.varint_encode(42)), ('key3', mtbl.varint_encode(12345))]),
+                ('right.mtbl',
+                 [('key1', mtbl.varint_encode(2)), ('key2', mtbl.varint_encode(1)), ('key3', mtbl.varint_encode(128))]),
+        ]:
+            m = self.write_mtbl(filename, tuples)
+            self.mtbls_to_merge.append(m)
+        result = self.do_merge(merge_func_ints)
+        result = [(k, mtbl.varint_decode(v)) for k,v in result]
+        self.assertEqual(
+            [
+                ('key1', 3),
+                ('key2', 43),
+                ('key3', 12345 + 128),
             ],
             result,
         )
