@@ -105,7 +105,7 @@ def varint_decode(py_buf):
     cdef Py_ssize_t len_buf
     cdef size_t bytes_read
 
-    # This allows the function to accept strings like '\x01' in py3
+    # This allows the function to accept strings like '\x01' to '\x7f' in py3
     py_buf = to_bytes(py_buf)
 
     buf = <uint8_t *> py_buf
