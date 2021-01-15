@@ -105,8 +105,8 @@ def varint_decode(py_buf):
     cdef Py_ssize_t len_buf
     cdef size_t bytes_read
 
-    if type(py_buf) == bytearray or type(py_buf) == str:
-        py_buf = bytes(py_buf)
+    # This allows the function to accept strings like '\x01' in py3
+    py_buf = to_bytes(py_buf)
 
     buf = <uint8_t *> py_buf
     len_buf = len(py_buf)
