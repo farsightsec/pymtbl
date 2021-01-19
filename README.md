@@ -73,12 +73,14 @@ import mtbl
 w = mtbl.writer('example.mtbl', compression=mtbl.COMPRESSION_SNAPPY)
 w['key0'] = mtbl.varint_encode(2)
 w['key1'] = mtbl.varint_encode(128)
+w['key2'] = mtbl.varint_encode(98765432100)
 w.close()
 
 r = mtbl.reader('example.mtbl', verify_checksums=True)
 
 assert mtbl.varint_decode(r.get('key0')[0]) == 2
 assert mtbl.varint_decode(r.get('key1')[0]) == 128
+assert mtbl.varint_decode(r.get('key2')[0]) == 98765432100
 ```
 
 
