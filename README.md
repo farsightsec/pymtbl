@@ -72,19 +72,25 @@ If you want to disable this behavior and read the contents of the mtbl as bytes 
 r = mtbl.reader('example.mtbl', verify_checksums=True, return_bytes=True)
 ```
 
+If you want to store integers in your mtbl use varint_encode() and varint_decode() or [struct.pack](https://docs.python.org/3.9/library/struct.html#struct.pack) and [struct.unpack](https://docs.python.org/3.9/library/struct.html#struct.pack) to do so:
+
 ```
 import mtbl
+import struct
+
 w = mtbl.writer('example.mtbl', compression=mtbl.COMPRESSION_SNAPPY)
 w['key0'] = mtbl.varint_encode(2)
 w['key1'] = mtbl.varint_encode(128)
 w['key2'] = mtbl.varint_encode(98765432100)
+w['key3'] = struct.pack('I', 123)
 w.close()
 
-r = mtbl.reader('example.mtbl', verify_checksums=True)
+r = mtbl.reader('example.mtbl', verify_checksums=True, return_bytes=True)
 
 assert mtbl.varint_decode(r.get('key0')[0]) == 2
 assert mtbl.varint_decode(r.get('key1')[0]) == 128
 assert mtbl.varint_decode(r.get('key2')[0]) == 98765432100
+assert struct.unpack('I', r.get('key3')[0])[0] == 123
 ```
 
 
@@ -102,8 +108,8 @@ Now you would write:
 
 ```
 x = mtbl.varint_encode(1234)
-if type(x) == str:  # py2
+if type(x) == str: # py2
     first_byte = ord(x[0])
-else:                        # py3
+else: # py3
     first_byte = x[0]
 ```
