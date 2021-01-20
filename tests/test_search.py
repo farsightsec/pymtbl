@@ -22,8 +22,9 @@ class SearchTestCase(MtblTestCase):
     def setUp(self):
         super(SearchTestCase, self).setUp()
         # write our test mtbl
-        self.filepath = os.path.join(
-            os.path.dirname(__file__), 'example.mtbl')
+        self.filepath = os.path.abspath(
+            os.path.join(
+                os.path.dirname(__file__), 'example.mtbl'))
         self.write_mtbl(
             self.filepath,
             [

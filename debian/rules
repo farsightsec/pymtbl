@@ -1,7 +1,6 @@
 #!/usr/bin/make -f
 
-%:
-	dh $@ --with python2
+export PYBUILD_NAME=mtbl
 
-override_dh_auto_test:
-	python -m unittest discover
+%:
+	dh $@ --with python2,python3 --buildsystem=pybuild

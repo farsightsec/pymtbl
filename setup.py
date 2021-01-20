@@ -56,7 +56,7 @@ class Test(Command):
 
     def run(self):
         unittest.TextTestRunner(verbosity=1).run(
-            unittest.TestLoader().discover('.'))
+            unittest.TestLoader().discover('tests'))
 
 
 try:
