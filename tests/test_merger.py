@@ -18,7 +18,7 @@ from . import MtblTestCase
 
 
 def merge_func_str(key, val0, val1):
-    return val0 + ' ' + val1
+    return val0 + b' ' + val1
 
 def merge_func_ints(_, val0, val1):
     i0 = mtbl.varint_decode(val0)
@@ -45,7 +45,7 @@ class MergerTestCase(MtblTestCase):
         for k, v in merger.iteritems():
             writer[k] = v
         writer.close()
-        # check that our results merged as expected
+        # return a reader so we can check our results
         reader = mtbl.reader(merged_filename, verify_checksums=True)
         return list(reader.iteritems())
 
@@ -116,3 +116,27 @@ class MergerTestCase(MtblTestCase):
             ],
             result,
         )
+
+    def test_merge_iteritems_as_bytes(self):
+        self.mtbls_to_merge = []
+        for filename, tuples in [
+                ('left.mtbl',
+                 [('key1', 'val1'), ('key2', 'val2'), ('key3', 'val3')]),
+                ('right.mtbl',
+                 [('key1', 'val17'), ('key2', 'val23'), ('key4', 'val4')]),
+        ]:
+            m = self.write_mtbl(filename, tuples)
+            self.mtbls_to_merge.append(m)
+        merger = mtbl.merger(merge_func_str, return_bytes=True)
+        for filename in self.mtbls_to_merge:
+            merger.add_reader(mtbl.reader(filename))
+        
+        result = list(merger.iteritems())
+        
+        self.assertEqual([
+            (b'key1', b'val1 val17'),
+            (b'key2', b'val2 val23'),
+            (b'key3', b'val3'),
+            (b'key4', b'val4'),
+        ],
+        result)

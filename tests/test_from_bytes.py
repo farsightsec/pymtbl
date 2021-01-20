@@ -57,3 +57,12 @@ class StrFromBytesTestCase(unittest.TestCase):
         actual = mtbl.from_bytes(expected)
         self.assertEqual(actual, expected)
     
+    def test_from_bytes_with_byte_string_as_bytes(self):
+        expected = b'foobar'
+        actual = mtbl.from_bytes(expected, True)
+        self.assertEqual(actual, expected)
+    
+    def test_from_bytes_with_byte_string_as_bytes2(self):
+        expected = b'\x01'
+        actual = mtbl.from_bytes(expected, True)
+        self.assertEqual(actual, expected)

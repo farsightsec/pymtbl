@@ -79,6 +79,13 @@ class ReaderTestCase(unittest.TestCase):
         self.assertEqual(self.reader.get(b'\x61'), ['a'])   
         self.assertEqual(self.reader.get(b'\x90N'), [b'\xaa'])
     
+    def test_get_as_bytes(self):
+        self.reader = mtbl.reader(self.filepath, verify_checksums=True, return_bytes=True)
+        self.assertEqual(self.reader.get(b'\xe4\xbd\xa0\xe5\xa5\xbd\xef\xbc\x8c\xe4\xb8\x96\xe7\x95\x8c'), [b'hello world'])
+        self.assertEqual(self.reader.get(b'a'), [b'a'])
+        self.assertEqual(self.reader.get(b'\x61'), [b'a'])   
+        self.assertEqual(self.reader.get(b'\x90N'), [b'\xaa'])
+    
     def test_get_keyerror_returns_none(self):
         self.assertEqual(self.reader.get('nope'), None)
 
@@ -89,6 +96,11 @@ class ReaderTestCase(unittest.TestCase):
     def test_get_range(self):
         result = list(self.reader.get_range('key19', 'key23'))
         self.assertEqual([('key2', 'val2'), ('key23', 'val23')], result)
+    
+    def test_get_range_as_bytes(self):
+        self.reader = mtbl.reader(self.filepath, verify_checksums=True, return_bytes=True)
+        result = list(self.reader.get_range('key19', 'key23'))
+        self.assertEqual([(b'key2', b'val2'), (b'key23', b'val23')], result)
 
     def test_get_prefix(self):
         result = list(self.reader.get_prefix(b'key2'))
@@ -106,6 +118,19 @@ class ReaderTestCase(unittest.TestCase):
                 ('key3', 'val3'),
             ], result)
     
+    def test_get_prefix_string_as_bytes(self):
+        self.reader = mtbl.reader(self.filepath, verify_checksums=True, return_bytes=True)
+        result = list(self.reader.get_prefix('key'))
+        self.assertEqual(
+            [
+                (b'key0', b'\xff'),
+                (b'key1', b'val1'),
+                (b'key17', b'val17'),                
+                (b'key2', b'val2'),
+                (b'key23', b'val23'),
+                (b'key3', b'val3'),
+            ], result)
+    
     def test_iterkeys(self):
         result = list(self.reader.iterkeys())
         self.assertEqual(
@@ -120,6 +145,25 @@ class ReaderTestCase(unittest.TestCase):
                 'key3',
                 b'\x90N',
                 '你好，世界',
+            ],
+            result,
+        )
+    
+    def test_iterkeys_as_bytes(self):
+        self.reader = mtbl.reader(self.filepath, verify_checksums=True, return_bytes=True)
+        result = list(self.reader.iterkeys())
+        self.assertEqual(
+            [
+                b'\x00',                
+                b'a',
+                b'key0',
+                b'key1',
+                b'key17',
+                b'key2',
+                b'key23',
+                b'key3',
+                b'\x90N',
+                b'\xe4\xbd\xa0\xe5\xa5\xbd\xef\xbc\x8c\xe4\xb8\x96\xe7\x95\x8c',
             ],
             result,
         )
@@ -141,6 +185,25 @@ class ReaderTestCase(unittest.TestCase):
             ],
             result,
         )
+    
+    def test_itervalues_as_bytes(self):
+        self.reader = mtbl.reader(self.filepath, verify_checksums=True, return_bytes=True)
+        result = list(self.reader.itervalues())
+        self.assertEqual(
+            [
+                b'\x01',                
+                b'a',
+                b'\xff',
+                b'val1',
+                b'val17',
+                b'val2',
+                b'val23',
+                b'val3',
+                b'\xaa',
+                b'hello world',
+            ],
+            result,
+        )
 
     def test_iteritems(self):
         result = list(self.reader.iteritems())
@@ -156,6 +219,25 @@ class ReaderTestCase(unittest.TestCase):
                 ('key3', 'val3'),
                 (b'\x90N', b'\xaa'),
                 ('你好，世界', 'hello world'),
+            ],
+            result,
+        )
+    
+    def test_iteritems_as_bytes(self):
+        self.reader = mtbl.reader(self.filepath, verify_checksums=True, return_bytes=True)
+        result = list(self.reader.iteritems())
+        self.assertEqual(
+            [
+                (b'\x00', b'\x01'),                
+                (b'a', b'a'),
+                (b'key0', b'\xff'),
+                (b'key1', b'val1'),
+                (b'key17', b'val17'),
+                (b'key2', b'val2'),
+                (b'key23', b'val23'),
+                (b'key3', b'val3'),
+                (b'\x90N', b'\xaa'),
+                (b'\xe4\xbd\xa0\xe5\xa5\xbd\xef\xbc\x8c\xe4\xb8\x96\xe7\x95\x8c', b'hello world'),
             ],
             result,
         )

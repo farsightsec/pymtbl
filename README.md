@@ -66,7 +66,11 @@ assert r.get('key2') == ['~']
 assert r.get('key3') == [b'\x80\x01'] # not a printable string so the value read back is bytes
 ```
 
-If you want to store integers in your mtbl use varint_encode() and varint_decode() to do so:
+If you want to disable this behavior and read the contents of the mtbl as bytes then initialize your reader with `return_bytes=True`
+
+```
+r = mtbl.reader('example.mtbl', verify_checksums=True, return_bytes=True)
+```
 
 ```
 import mtbl

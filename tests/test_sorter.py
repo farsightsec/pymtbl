@@ -12,49 +12,90 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import unittest
 
 import mtbl
-from . import MtblTestCase
 
 def merge_func(key, val0, val1):
-    return val0 + ' sorted ' + val1
+    return val0 + b' sorted ' + val1
 
-class SorterTestCase(MtblTestCase):
-    def setUp(self):
-        super(SorterTestCase, self).setUp()
+def make_sort(return_bytes=False):
+    # create the sorted mtbl
+    sorter = mtbl.sorter(merge_func, return_bytes=return_bytes)
+    test_data = [
+        ('key0', 'val0'),
+        ('key0', 'val01'),
+        ('key1', 'val1'),
+        ('key2', 'val2'),
+        ('key3', 'val3'),
+        ('key3', 'val31')
+    ]
+    
+    for d in test_data:
+        sorter[d[0]] = d[1]
+    return sorter
+
+class SorterTestCase(unittest.TestCase):
     
     def test_sort_with_merging(self):
-        # create the sorted mtbl
-        sorter = mtbl.sorter(merge_func)
-        sorted_filename = os.path.join(os.path.dirname(__file__), 'sorted.mtbl')
-        writer = mtbl.writer(
-            sorted_filename, compression=mtbl.COMPRESSION_NONE)
-        self.addCleanup(os.remove, sorted_filename)
-
-        test_data = [
-            ('key0', 'val0'),
-            ('key0', 'val01'),
-            ('key1', 'val1'),
-            ('key2', 'val2'),
-            ('key3', 'val3'),
-            ('key3', 'val31')
-        ]
-        for d in test_data:
-            sorter[d[0]] = d[1]
-
-        # write the mtbl
-        sorter.write(writer)
-        writer.close()
+        sorter =  make_sort()
 
         # check our results
-        reader = mtbl.reader(sorted_filename, verify_checksums=True)
-        result = list(reader.iteritems())
+        result = list(sorter.iteritems())
         self.assertEqual(
             [
                 ('key0', 'val0 sorted val01'),
                 ('key1', 'val1'),
                 ('key2', 'val2'),
                 ('key3', 'val3 sorted val31')
+            ],
+            result,
+        )
+    
+    def test_sort_iteritems_as_bytes(self):
+        # create the sorted mtbl but this time read as bytes
+        sorter =  make_sort(True)
+        
+        result = list(sorter.iteritems())
+
+        self.assertEqual(
+            [
+                (b'key0', b'val0 sorted val01'),
+                (b'key1', b'val1'),
+                (b'key2', b'val2'),
+                (b'key3', b'val3 sorted val31')
+            ],
+            result,
+        )
+    
+    def test_sort_iterreturn_bytes(self):
+        # create the sorted mtbl but this time read as bytes
+        sorter =  make_sort(True)
+        
+        result = list(sorter.iterkeys())
+
+        self.assertEqual(
+            [
+                (b'key0'),
+                (b'key1'),
+                (b'key2'),
+                (b'key3')
+            ],
+            result,
+        )
+    
+    def test_sort_itervalues_as_bytes(self):
+        # create the sorted mtbl but this time read as bytes
+        sorter =  make_sort(True)
+        
+        result = list(sorter.itervalues())
+
+        self.assertEqual(
+            [
+                (b'val0 sorted val01'),
+                (b'val1'),
+                (b'val2'),
+                (b'val3 sorted val31')
             ],
             result,
         )
