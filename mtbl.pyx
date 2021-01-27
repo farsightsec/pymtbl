@@ -42,6 +42,41 @@ class VarintDecodingError(Exception):
 
 ImmutableError = TypeError('object does not support mutation')
 
+def to_bytes(value):
+    """
+    to_bytes(v) -> return a bytes object from a bytes, str, and bytearray; raises a ValueError if the conversion fails
+    """
+    # bytes needs to be before str because in py2 str is already bytes
+    if isinstance(value, bytes):
+        b = value
+    elif isinstance(value, str):
+        b = value.encode()
+    elif isinstance(value, bytearray):
+        b = bytes(value)
+    else:
+        raise ValueError('Only str, bytes, and bytearrays are allowed.')
+    return b
+
+def from_bytes(bytes value, bool return_bytes=False):
+    """
+    from_bytes(v) -> given bytes returns str by UTF-8 decoding it. returns the bytes unchanged if decoding 
+    fails
+
+    Keyword arguments:
+    return_bytes -- whether to return data as bytes without attempting to convert it to str (default False)
+    """
+    if return_bytes:
+        return value
+    
+    if isinstance(value, str): #py2
+        v = value
+    else: #py3
+        try:
+            v = value.decode('utf-8')
+        except UnicodeDecodeError:
+            v = value
+    return v
+
 def varint_length(uint64_t value):
     """varint_length(v) -> number of bytes the integer v would require in varint encoding."""
     return mtbl_varint_length(value)
@@ -52,8 +87,7 @@ def varint_length_packed(py_buf):
     cdef Py_ssize_t len_buf
     cdef size_t sz
     len_buf = len(py_buf)
-    if type(py_buf) == bytearray or type(py_buf) == str:
-        py_buf = bytes(py_buf)
+    py_buf = to_bytes(py_buf)
     buf = py_buf
     with nogil:
         sz = mtbl_varint_length_packed(buf, len_buf)
@@ -77,8 +111,8 @@ def varint_decode(py_buf):
     cdef Py_ssize_t len_buf
     cdef size_t bytes_read
 
-    if type(py_buf) == bytearray or type(py_buf) == str:
-        py_buf = bytes(py_buf)
+    # This allows the function to accept strings like '\x01' to '\x7f' in py3
+    py_buf = to_bytes(py_buf)
 
     buf = <uint8_t *> py_buf
     len_buf = len(py_buf)
@@ -92,12 +126,14 @@ def varint_decode(py_buf):
 cdef class iterkeys(object):
     cdef mtbl_iter *_instance
     cdef object _parent
+    cdef bool return_bytes
 
     def __cinit__(self):
         self._instance = NULL
 
-    def __init__(self, object _parent):
+    def __init__(self, object _parent, bool return_bytes=False):
         self._parent = _parent
+        self.return_bytes = return_bytes
 
     def __dealloc__(self):
         with nogil:
@@ -120,18 +156,20 @@ cdef class iterkeys(object):
             res = mtbl_iter_next(self._instance, &key, &len_key, &val, &len_val)
         if res == mtbl_res_failure:
             raise StopIteration
-        return <bytes> key[:len_key]
 
+        return from_bytes(key[:len_key], self.return_bytes)
 @cython.internal
 cdef class itervalues(object):
     cdef mtbl_iter *_instance
     cdef object _parent
+    cdef bool return_bytes
 
     def __cinit__(self):
         self._instance = NULL
 
-    def __init__(self, object _parent):
+    def __init__(self, object _parent, bool return_bytes=False):
         self._parent = _parent
+        self.return_bytes = return_bytes
 
     def __dealloc__(self):
         with nogil:
@@ -154,18 +192,20 @@ cdef class itervalues(object):
             res = mtbl_iter_next(self._instance, &key, &len_key, &val, &len_val)
         if res == mtbl_res_failure:
             raise StopIteration
-        return <bytes> val[:len_val]
+        return from_bytes(val[:len_val], self.return_bytes)
 
 @cython.internal
 cdef class iteritems(object):
     cdef mtbl_iter *_instance
     cdef object _parent
+    cdef bool return_bytes
 
     def __cinit__(self):
         self._instance = NULL
 
-    def __init__(self, object _parent):
+    def __init__(self, object _parent, bool return_bytes=False):
         self._parent = _parent
+        self.return_bytes = return_bytes
 
     def __dealloc__(self):
         with nogil:
@@ -190,20 +230,20 @@ cdef class iteritems(object):
         if res == mtbl_res_failure:
             raise StopIteration
 
-        return (<bytes> key[:len_key], <bytes> val[:len_val])
+        return (from_bytes(key[:len_key], self.return_bytes), from_bytes(val[:len_val], self.return_bytes))
 
-cdef get_iterkeys(parent, mtbl_iter *instance):
-    it = iterkeys(parent)
+cdef get_iterkeys(parent, mtbl_iter *instance, bool return_bytes=False):
+    it = iterkeys(parent, return_bytes)
     it._instance = instance
     return it
 
-cdef get_itervalues(parent, mtbl_iter *instance):
-    it = itervalues(parent)
+cdef get_itervalues(parent, mtbl_iter *instance, bool return_bytes=False):
+    it = itervalues(parent, return_bytes)
     it._instance = instance
     return it
 
-cdef get_iteritems(parent, mtbl_iter *instance):
-    it = iteritems(parent)
+cdef get_iteritems(parent, mtbl_iter *instance, bool return_bytes=False):
+    it = iteritems(parent, return_bytes)
     it._instance = instance
     return it
 
@@ -253,8 +293,10 @@ cdef class reader(DictMixin):
 
     Keyword arguments:
     verify_checksums -- whether to verify data block checksums (default False)
+    return_bytes -- whether to return data as bytes without attempting to convert it to str (default False)
     """
     cdef mtbl_reader *_instance
+    cdef bool return_bytes
 
     def __cinit__(self):
         self._instance = NULL
@@ -263,10 +305,11 @@ cdef class reader(DictMixin):
         with nogil:
             mtbl_reader_destroy(&self._instance)
 
-    def __init__(self, str fname, bool verify_checksums=False):
+    def __init__(self, str fname, bool verify_checksums=False, bool return_bytes=False):
         cdef mtbl_reader_options *opt
         cdef bytes tfn_bytes = fname.encode('utf-8')
         cdef char *tfn = tfn_bytes
+        self.return_bytes = return_bytes
 
         with nogil:
             opt = mtbl_reader_options_init()
@@ -284,19 +327,19 @@ cdef class reader(DictMixin):
     def iterkeys(self):
         """R.iterkeys() -> an iterator over the keys of R."""
         self.check_initialized()
-        return get_iterkeys(self, mtbl_source_iter(mtbl_reader_source(self._instance)))
+        return get_iterkeys(self, mtbl_source_iter(mtbl_reader_source(self._instance)), self.return_bytes)
 
     def itervalues(self):
         """R.itervalues() -> an iterator over the values of R."""
         self.check_initialized()
-        return get_itervalues(self, mtbl_source_iter(mtbl_reader_source(self._instance)))
+        return get_itervalues(self, mtbl_source_iter(mtbl_reader_source(self._instance)), self.return_bytes)
 
     def iteritems(self):
         """R.iteritems() -> an iterator over the (key, value) items of R."""
         self.check_initialized()
-        return get_iteritems(self, mtbl_source_iter(mtbl_reader_source(self._instance)))
+        return get_iteritems(self, mtbl_source_iter(mtbl_reader_source(self._instance)), self.return_bytes)
 
-    def __contains__(self, bytes py_key):
+    def __contains__(self, py_key):
         """R.__contains__(k) -> True if R has a key k, else False"""
         try:
             self.__getitem__(py_key)
@@ -305,11 +348,11 @@ cdef class reader(DictMixin):
             pass
         return False
 
-    def has_key(self, bytes py_key):
+    def has_key(self, py_key):
         """R.has_key(k) -> True if R has a key k, else False."""
         return self.__contains__(py_key)
 
-    def get(self, bytes py_key, default=None):
+    def get(self, py_key, default=None):
         """R.get(k[,d]) -> R[k] if k in R, else d.  d defaults to None."""
         try:
             return self.__getitem__(py_key)
@@ -317,7 +360,7 @@ cdef class reader(DictMixin):
             pass
         return default
 
-    def get_range(self, bytes py_key0, bytes py_key1):
+    def get_range(self, py_key0, py_key1):
         """
         R.get_range(key0, key1) -> an iterator over all (key, value) items in R where key is
         between key0 and key1 inclusive.
@@ -330,17 +373,17 @@ cdef class reader(DictMixin):
 
         self.check_initialized()
 
-        t = py_key0
+        t = to_bytes(py_key0)
         key0 = <uint8_t *> t
-        t = py_key1
-        key1 = <uint8_t *> t
-        len_key0 = len(py_key0)
-        len_key1 = len(py_key1)
+        len_key0 = len(t)
+        t = to_bytes(py_key1)
+        key1 = <uint8_t *> t        
+        len_key1 = len(t)
 
         return get_iteritems(self, mtbl_source_get_range(
-            mtbl_reader_source(self._instance), key0, len_key0, key1, len_key1))
+            mtbl_reader_source(self._instance), key0, len_key0, key1, len_key1), self.return_bytes)
 
-    def get_prefix(self, bytes py_key):
+    def get_prefix(self, py_key):
         """
         R.get_prefix(key_prefix) -> an iterator over all (key, value) items in R where key
         begins with key_prefix.
@@ -351,14 +394,14 @@ cdef class reader(DictMixin):
 
         self.check_initialized()
 
-        t = py_key
+        t = to_bytes(py_key)
         key = <uint8_t *> t
-        len_key = len(py_key)
+        len_key = len(t)
 
         return get_iteritems(self, mtbl_source_get_prefix(
-            mtbl_reader_source(self._instance), key, len_key))
+            mtbl_reader_source(self._instance), key, len_key), self.return_bytes)
 
-    def __getitem__(self, bytes py_key):
+    def __getitem__(self, py_key):
         cdef mtbl_iter *it
         cdef mtbl_res res
         cdef const uint8_t *key
@@ -368,9 +411,9 @@ cdef class reader(DictMixin):
 
         self.check_initialized()
 
-        t = py_key
+        t = to_bytes(py_key)        
         key = <uint8_t *> t
-        len_key = len(py_key)
+        len_key = len(t)
 
         items = []
         with nogil:
@@ -382,7 +425,7 @@ cdef class reader(DictMixin):
                 res = mtbl_iter_next(it, &key, &len_key, &val, &len_val)
             if res == mtbl_res_failure:
                 break
-            items.append(val[:len_val])
+            items.append(from_bytes(val[:len_val], self.return_bytes))
         with nogil:
             mtbl_iter_destroy(&it)
         if not items:
@@ -459,10 +502,8 @@ cdef class writer(object):
         if self._instance == NULL:
             raise TableClosedException
 
-        if type(py_key) == bytearray or type(py_key) == str:
-            py_key = bytes(py_key)
-        if type(py_val) == bytearray or type(py_val) == str:
-            py_val = bytes(py_val)
+        py_key = to_bytes(py_key)
+        py_val = to_bytes(py_val)
 
         key = <uint8_t *> py_key
         val = <uint8_t *> py_val
@@ -513,6 +554,7 @@ cdef class merger(object):
     cdef set _references
     cdef _lock
     cdef object merge_func
+    cdef bool return_bytes
 
     def __cinit__(self):
         self._instance = NULL
@@ -521,7 +563,7 @@ cdef class merger(object):
         with nogil:
             mtbl_merger_destroy(&self._instance)
 
-    def __init__(self, object merge_func):
+    def __init__(self, object merge_func, bool return_bytes=False):
         cdef mtbl_merger_options *opt
         self.merge_func = merge_func
         opt = mtbl_merger_options_init()
@@ -532,6 +574,7 @@ cdef class merger(object):
         mtbl_merger_options_destroy(&opt)
         self._references = set()
         self._lock = threading.Semaphore()
+        self.return_bytes = return_bytes
 
     def add_reader(self, reader r):
         """M.add_reader(mtbl.reader) -- add a reader object as a merge input"""
@@ -555,15 +598,15 @@ cdef class merger(object):
 
     def iterkeys(self):
         """M.iterkeys() -> an iterator over the merged keys of M."""
-        return get_iterkeys(self, mtbl_source_iter(mtbl_merger_source(self._instance)))
+        return get_iterkeys(self, mtbl_source_iter(mtbl_merger_source(self._instance)), self.return_bytes)
 
     def itervalues(self):
         """M.itervalues() -> an iterator over the merged values of M."""
-        return get_itervalues(self, mtbl_source_iter(mtbl_merger_source(self._instance)))
+        return get_itervalues(self, mtbl_source_iter(mtbl_merger_source(self._instance)), self.return_bytes)
 
     def iteritems(self):
         """M.iteritems() -> an iterator over the merged (key, value) items of M."""
-        return get_iteritems(self, mtbl_source_iter(mtbl_merger_source(self._instance)))
+        return get_iteritems(self, mtbl_source_iter(mtbl_merger_source(self._instance)), self.return_bytes)
 
     def get(self, bytes py_key):
         """
@@ -578,7 +621,7 @@ cdef class merger(object):
         len_key = len(py_key)
 
         return get_iteritems(self,
-                mtbl_source_get(mtbl_merger_source(self._instance), key, len_key))
+                mtbl_source_get(mtbl_merger_source(self._instance), key, len_key), self.return_bytes)
 
     def get_range(self, bytes py_key0, bytes py_key1):
         """
@@ -599,7 +642,7 @@ cdef class merger(object):
         len_key1 = len(py_key1)
 
         return get_iteritems(self, mtbl_source_get_range(
-            mtbl_merger_source(self._instance), key0, len_key0, key1, len_key1))
+            mtbl_merger_source(self._instance), key0, len_key0, key1, len_key1), self.return_bytes)
 
     def get_prefix(self, bytes py_key):
         """
@@ -615,7 +658,7 @@ cdef class merger(object):
         len_key = len(py_key)
 
         return get_iteritems(self, mtbl_source_get_prefix(
-            mtbl_merger_source(self._instance), key, len_key))
+            mtbl_merger_source(self._instance), key, len_key), self.return_bytes)
 
 cdef class sorter(object):
     """
@@ -633,6 +676,7 @@ cdef class sorter(object):
     """
     cdef mtbl_sorter *_instance
     cdef _lock
+    cdef bool return_bytes
 
     def __cinit__(self):
         self._instance = NULL
@@ -644,7 +688,8 @@ cdef class sorter(object):
     def __init__(self,
                  object merge_func,
                  str temp_dir=DEFAULT_SORTER_TEMP_DIR,
-                 size_t max_memory=DEFAULT_SORTER_MEMORY):
+                 size_t max_memory=DEFAULT_SORTER_MEMORY,
+                 bool return_bytes=False):
         cdef mtbl_sorter_options *opt
         self._lock = threading.Semaphore()
 
@@ -660,6 +705,7 @@ cdef class sorter(object):
         with nogil:
             self._instance = mtbl_sorter_init(opt)
             mtbl_sorter_options_destroy(&opt)
+        self.return_bytes = return_bytes
 
     def write(self, writer w):
         """S.write(mtbl.writer) -- dump sorted output to writer"""
@@ -688,10 +734,8 @@ cdef class sorter(object):
         if self._instance == NULL:
             raise RuntimeError
 
-        if type(py_key) == bytearray or type(py_key) == str:
-            py_key = bytes(py_key)
-        if type(py_val) == bytearray or type(py_val) == str:
-            py_val = bytes(py_val)
+        py_key = to_bytes(py_key)
+        py_val = to_bytes(py_val)
 
         t = py_key
         key = <uint8_t *> t
@@ -715,12 +759,12 @@ cdef class sorter(object):
 
     def iterkeys(self):
         """S.iterkeys() -> an iterator over the sorted keys of R."""
-        return get_iterkeys(self, mtbl_sorter_iter(self._instance))
+        return get_iterkeys(self, mtbl_sorter_iter(self._instance), self.return_bytes)
 
     def itervalues(self):
         """S.itervalues() -> an iterator over the sorted values of R."""
-        return get_itervalues(self, mtbl_sorter_iter(self._instance))
+        return get_itervalues(self, mtbl_sorter_iter(self._instance), self.return_bytes)
 
     def iteritems(self):
         """S.iteritems() -> an iterator over the sorted (key, value) items of R."""
-        return get_iteritems(self, mtbl_sorter_iter(self._instance))
+        return get_iteritems(self, mtbl_sorter_iter(self._instance), self.return_bytes)

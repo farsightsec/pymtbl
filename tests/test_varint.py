@@ -23,14 +23,8 @@ class TestVarint(unittest.TestCase):
     def test_0_arg_type(self):
         x = varint_decode(b'\xc4\xb8\xd30\x00\x00\x00')
         x = varint_decode(bytearray(b'\xc4\xb8\xd30\x00\x00\x00'))
-
-        # py2 will accept the following, but py3 will not
-        # bc in py2 type 'bytes' is a synonym for type 'str'
-        # note that you cant reliably use .encode() since these are
-        # byte buffers and not guaranteed to be some sort of encoded string
-        # so the following should be avoided in client scripts or you
-        # risk portability
-        # x = varint_decode('\xc4\xb8\xd30\x00\x00\x00')
+        x = varint_decode('\xc4\xb8\xd30\x00\x00\x00')
+        
 
     def test_inverse(self):
         assert 123 == varint_decode(varint_encode(123))
@@ -41,6 +35,7 @@ class TestVarint(unittest.TestCase):
         assert 2 == varint_length_packed(varint_encode(1000))
         assert 4 == varint_length_packed(bytearray(b'\xc4\xb8\xd30\x00\x00\x00'))
         assert 4 == varint_length_packed(b'\xc4\xb8\xd30\x00\x00\x00')
+        assert 1 == varint_length_packed('foo')
 
     def test_insitu_decode(self):
         assert 102030404 == varint_decode(bytearray(b'\xc4\xb8\xd30\x00\x00\x00'))

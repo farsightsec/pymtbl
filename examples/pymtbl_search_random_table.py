@@ -40,19 +40,19 @@ def main(fname, num_keys, num_iters):
             last_secs = b - last
             last = b
             sys.stderr.write('%s lookups, %s keys found in %s seconds, %s lookups/second\n' % (
-                locale.format('%d', count, grouping=True),
-                locale.format('%d', num_found, grouping=True),
-                locale.format('%f', last_secs, grouping=True),
-                locale.format('%d', report_interval / last_secs, grouping=True)
+                locale.format_string('%d', count, grouping=True),
+                locale.format_string('%d', num_found, grouping=True),
+                locale.format_string('%f', last_secs, grouping=True),
+                locale.format_string('%d', report_interval / last_secs, grouping=True)
                 )
             )
     b = time.time()
     total_secs = b - a
     sys.stderr.write('%s total lookups, %s keys found in %s seconds, %s lookups/second\n' % (
-        locale.format('%d', count, grouping=True),
-        locale.format('%d', num_found, grouping=True),
-        locale.format('%f', total_secs, grouping=True),
-        locale.format('%d', count / total_secs, grouping=True)
+        locale.format_string('%d', count, grouping=True),
+        locale.format_string('%d', num_found, grouping=True),
+        locale.format_string('%f', total_secs, grouping=True),
+        locale.format_string('%d', count / total_secs, grouping=True)
         )
     )
 
