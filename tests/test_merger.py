@@ -72,7 +72,7 @@ class MergerTestCase(MtblTestCase):
             ],
             result,
         )
-    
+
 
     def test_merge_and_iteritems_with_merge(self):
         # write two mtbls with the same keys
@@ -94,7 +94,7 @@ class MergerTestCase(MtblTestCase):
             ],
             result,
         )
-    
+
     def test_merge_with_ints(self):
         # write two mtbls with the same keys
         self.mtbls_to_merge = []
@@ -130,9 +130,9 @@ class MergerTestCase(MtblTestCase):
         merger = mtbl.merger(merge_func_str, return_bytes=True)
         for filename in self.mtbls_to_merge:
             merger.add_reader(mtbl.reader(filename))
-        
+
         result = list(merger.iteritems())
-        
+
         self.assertEqual([
             (b'key1', b'val1 val17'),
             (b'key2', b'val2 val23'),

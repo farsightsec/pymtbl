@@ -59,7 +59,7 @@ def to_bytes(value):
 
 def from_bytes(bytes value, bool return_bytes=False):
     """
-    from_bytes(v) -> given bytes returns str by UTF-8 decoding it. returns the bytes unchanged if decoding 
+    from_bytes(v) -> given bytes returns str by UTF-8 decoding it. returns the bytes unchanged if decoding
     fails
 
     Keyword arguments:
@@ -67,7 +67,7 @@ def from_bytes(bytes value, bool return_bytes=False):
     """
     if return_bytes:
         return value
-    
+
     if isinstance(value, str): #py2
         v = value
     else: #py3
@@ -377,7 +377,7 @@ cdef class reader(DictMixin):
         key0 = <uint8_t *> t
         len_key0 = len(t)
         t = to_bytes(py_key1)
-        key1 = <uint8_t *> t        
+        key1 = <uint8_t *> t
         len_key1 = len(t)
 
         return get_iteritems(self, mtbl_source_get_range(
@@ -411,7 +411,7 @@ cdef class reader(DictMixin):
 
         self.check_initialized()
 
-        t = to_bytes(py_key)        
+        t = to_bytes(py_key)
         key = <uint8_t *> t
         len_key = len(t)
 

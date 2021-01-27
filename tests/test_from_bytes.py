@@ -24,29 +24,29 @@ class StrFromBytesTestCase(unittest.TestCase):
         expected = 'foobar'
         actual = mtbl.from_bytes(expected.encode('utf-8'))
         self.assertEqual(actual, expected)
-    
+
     @unittest.skipIf(sys.version_info[0] >= 3, 'py3 can handle unicode')
     def test_from_bytes_with_nonascii_byte_string(self):
         expected = '\xe4\xbd\xa0\xe5\xa5\xbd'
         actual = mtbl.from_bytes(u'你好'.encode('utf-8'))
         self.assertEqual(actual, expected)
-    
+
     @unittest.skipIf(sys.version_info[0] == 2, 'py2 can\'t handle unicode')
     def test_from_bytes_with_nonascii_byte_string(self):
         expected = '你好'
         actual = mtbl.from_bytes(expected.encode('utf-8'))
         self.assertEqual(actual, expected)
-    
+
     def test_from_bytes_with_non_string(self):
         expected = b'\x90N'
         actual = mtbl.from_bytes(expected)
         self.assertEqual(actual, expected)
-    
+
     def test_from_bytes_with_non_string2(self):
         expected = b'\xc4\xb8\xd30\x00\x00\x00'
         actual = mtbl.from_bytes(expected)
         self.assertEqual(actual, expected)
-    
+
     def test_from_bytes_with_deadbeef(self):
         expected = b'\xde\xad\xbe\xef'
         actual = mtbl.from_bytes(expected)
@@ -56,12 +56,12 @@ class StrFromBytesTestCase(unittest.TestCase):
         expected = b'\x80\x01' # b'\x80\x01' == mtbl.varint_encode(128)
         actual = mtbl.from_bytes(expected)
         self.assertEqual(actual, expected)
-    
+
     def test_from_bytes_with_byte_string_as_bytes(self):
         expected = b'foobar'
         actual = mtbl.from_bytes(expected, True)
         self.assertEqual(actual, expected)
-    
+
     def test_from_bytes_with_byte_string_as_bytes2(self):
         expected = b'\x01'
         actual = mtbl.from_bytes(expected, True)

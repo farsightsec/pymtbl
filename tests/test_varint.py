@@ -24,7 +24,6 @@ class TestVarint(unittest.TestCase):
         x = varint_decode(b'\xc4\xb8\xd30\x00\x00\x00')
         x = varint_decode(bytearray(b'\xc4\xb8\xd30\x00\x00\x00'))
         x = varint_decode('\xc4\xb8\xd30\x00\x00\x00')
-        
 
     def test_inverse(self):
         assert 123 == varint_decode(varint_encode(123))

@@ -30,13 +30,13 @@ def make_sort(return_bytes=False):
         ('key3', 'val3'),
         ('key3', 'val31')
     ]
-    
+
     for d in test_data:
         sorter[d[0]] = d[1]
     return sorter
 
 class SorterTestCase(unittest.TestCase):
-    
+
     def test_sort_with_merging(self):
         sorter =  make_sort()
 
@@ -51,11 +51,11 @@ class SorterTestCase(unittest.TestCase):
             ],
             result,
         )
-    
+
     def test_sort_iteritems_as_bytes(self):
         # create the sorted mtbl but this time read as bytes
         sorter =  make_sort(True)
-        
+
         result = list(sorter.iteritems())
 
         self.assertEqual(
@@ -67,11 +67,11 @@ class SorterTestCase(unittest.TestCase):
             ],
             result,
         )
-    
+
     def test_sort_iterreturn_bytes(self):
         # create the sorted mtbl but this time read as bytes
         sorter =  make_sort(True)
-        
+
         result = list(sorter.iterkeys())
 
         self.assertEqual(
@@ -83,11 +83,11 @@ class SorterTestCase(unittest.TestCase):
             ],
             result,
         )
-    
+
     def test_sort_itervalues_as_bytes(self):
         # create the sorted mtbl but this time read as bytes
         sorter =  make_sort(True)
-        
+
         result = list(sorter.itervalues())
 
         self.assertEqual(

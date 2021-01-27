@@ -22,7 +22,7 @@ class ToBytesTestCase(unittest.TestCase):
         expected = b'foobar'
         actual = mtbl.to_bytes('foobar')
         self.assertEqual(actual, expected)
-    
+
     def test_byte_string_to_bytes(self):
         expected = b'foobar'
         actual = mtbl.to_bytes(expected)
@@ -37,10 +37,9 @@ class ToBytesTestCase(unittest.TestCase):
         expected = b'\xde\xad\xbe\xef'
         actual = mtbl.to_bytes(bytearray(b'\xde\xad\xbe\xef'))
         self.assertEqual(actual, expected)
-    
+
     def test_to_bytes_raises_valueerror_with_list(self):
         self.assertRaises(ValueError, mtbl.to_bytes, ['a', 'b', 'c', 'd'])
-    
+
     def test_to_bytes_raises_valueerror_with_int(self):
         self.assertRaises(ValueError, mtbl.to_bytes, 42)
-    

@@ -23,15 +23,15 @@ writer interfaces (nb. the traceback is expected behavior):
     >>> w.close()
     >>> r = mtbl.reader('example.mtbl', verify_checksums=True)
     >>> for k,v in r.get_range('key19', 'key23'): print(k, v)
-    ... 
+    ...
     'key2' 'val2'
     'key23' 'val23'
     >>> for k,v in r.get_prefix('key2'): print(k, v)
-    ... 
+    ...
     'key2' 'val2'
     'key23' 'val23'
     >>> for k,v in r.iteritems(): print(k, v)
-    ... 
+    ...
     'key1' 'val1'
     'key17' 'val17'
     'key2' 'val2'
@@ -41,9 +41,10 @@ writer interfaces (nb. the traceback is expected behavior):
     >>>
 
 
-In Python 3.x bytes() is a distinct type, whereas in Python 2.6 and 2.7 
-it is simply an alias for str(). We now take strings and bytes as function parameters. Note that if you pass in a byte 
-string that can be UTF-8 decoded it will be read back from the mtbl as a str.
+In Python 3.x bytes() is a distinct type, whereas in Python 2.6 and 2.7 it is
+simply an alias for str(). We now take strings and bytes as function
+parameters. Note that if you pass in a byte string that can be UTF-8 decoded it
+will be read back from the mtbl as a str.
 
 For example:
 
@@ -66,13 +67,18 @@ assert r.get('key2') == ['~']
 assert r.get('key3') == [b'\x80\x01'] # not a printable string so the value read back is bytes
 ```
 
-If you want to disable this behavior and read the contents of the mtbl as bytes then initialize your reader with `return_bytes=True`
+If you want to disable this behavior and read the contents of the mtbl as bytes
+then initialize your reader with `return_bytes=True`.
 
 ```
 r = mtbl.reader('example.mtbl', verify_checksums=True, return_bytes=True)
 ```
 
-If you want to store integers in your mtbl use varint_encode() and varint_decode() or [struct.pack](https://docs.python.org/3.9/library/struct.html#struct.pack) and [struct.unpack](https://docs.python.org/3.9/library/struct.html#struct.pack) to do so:
+If you want to store integers in your mtbl use varint_encode() and
+varint_decode() or
+[struct.pack](https://docs.python.org/3.9/library/struct.html#struct.pack) and
+[struct.unpack](https://docs.python.org/3.9/library/struct.html#struct.pack) to
+do so:
 
 ```
 import mtbl
@@ -93,9 +99,8 @@ assert mtbl.varint_decode(r.get('key2')[0]) == 98765432100
 assert struct.unpack('I', r.get('key3')[0])[0] == 123
 ```
 
-
-Finally, scripts that used ord() to determine the value of a byte in a buffer returned
-by this module under Python 2 will now need to test the data type. 
+Finally, scripts that used ord() to determine the value of a byte in a buffer
+returned by this module under Python 2 will now need to test the data type.
 
 For example, in pymtbl<=0.4.0 you might have written:
 
