@@ -14,7 +14,7 @@
 # limitations under the License.
 
 NAME = 'pymtbl'
-VERSION = '1.0.0'
+VERSION = '0.5.0'
 
 from distutils.core import setup, Command
 from distutils.extension import Extension

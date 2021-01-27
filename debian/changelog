@@ -1,7 +1,7 @@
-pymtbl (1.0.0) unstable; urgency=medium
+pymtbl (0.5.0-1) unstable; urgency=medium
 
-  * Add Python3 compatibility
-  * Add unit tests
+  * Add Python3 compatibility.
+  * Add unit tests.
 
  -- Farsight Security, Inc. <software@fsi.io>  Mon, 21 Jan 2019 19:44:02 +0000
 
