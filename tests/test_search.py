@@ -14,7 +14,7 @@
 import os
 
 import mtbl
-from . import MtblTestCase
+from tests import MtblTestCase
 
 
 class SearchTestCase(MtblTestCase):

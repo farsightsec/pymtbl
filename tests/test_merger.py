@@ -14,7 +14,7 @@
 import os
 
 import mtbl
-from . import MtblTestCase
+from tests import MtblTestCase
 
 
 def merge_func_str(key, val0, val1):
