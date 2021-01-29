@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Copyright (c) 2015-2019 by Farsight Security, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,22 +11,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
+import unittest
 
-from __future__ import print_function
-import sys
 import mtbl
 
 
-def main(mtbl_fname):
-    reader = mtbl.reader(mtbl_fname)
-    for k, v in reader.items():
-        word = k
-        count = mtbl.varint_decode(v)
-        print('%s\t%s' % (count, word))
+def write_mtbl(filename, tuples):
+    writer = mtbl.writer(filename, compression=mtbl.COMPRESSION_NONE)
+    for k, v in tuples:
+        writer[k] = v
+    writer.close()
 
 
-if __name__ == '__main__':
-    if not len(sys.argv) == 2:
-        sys.stderr.write('Usage: %s <MTBL FILE>\n' % sys.argv[0])
-        sys.exit(1)
-    main(sys.argv[1])
+class MtblTestCase(unittest.TestCase):
+
+    def write_mtbl(self, filename, tuples):
+        # tempfiles would be better but mtbl is bossy about fds :/ (?)
+        filepath = os.path.join(
+            os.path.dirname(__file__), filename)
+        write_mtbl(filepath, tuples)
+        self.addCleanup(os.remove, filepath)
+        return filepath

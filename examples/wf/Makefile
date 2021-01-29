@@ -4,7 +4,7 @@ BOOK_FILES = $(foreach ebook,$(EBOOKS),$(ebook).txt)
 MTBL_FILES = $(foreach ebook,$(EBOOKS),$(ebook).mtbl)
 
 %.txt:
-	@wget -O $@ http://www.gutenberg.org/files/$(shell basename $@ .txt)/$@
+	@wget -O $@ http://www.gutenberg.org/files/$(shell basename $@ .txt)/$(shell basename $@ .txt)-0.txt
 
 %.mtbl: %.txt
 	rm -f $@
