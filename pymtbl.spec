@@ -1,5 +1,5 @@
 Name:           python-pymtbl
-Version:        0.4.1
+Version:        0.5.0
 Release:        1%{?dist}
 Summary:        immutable sorted string table library (Python bindings)
 
