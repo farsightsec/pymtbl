@@ -1,5 +1,6 @@
-pymtbl (0.5.0-2) debian-farsightsec; urgency=medium
+pymtbl (0.5.1-1) debian-farsightsec; urgency=medium
 
+  * Provide more detailed metadata in setup.py.
   * Deprecate Python2 package.
 
  -- Farsight Security, Inc. <software@farsightsecurity.com>  Wed, 09 Feb 2022 20:03:00 +0000
