@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2015-2019 by Farsight Security, Inc.
+# Copyright (c) 2015-2019, 2022 by Farsight Security, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,12 @@
 
 NAME = 'pymtbl'
 VERSION = '0.5.0'
+LICENSE = 'Apache License 2.0'
+DESCRIPTION = 'Python extension module for the mtbl C library'
+URL = 'https://github.com/farsightsec/pymtbl'
+AUTHOR = 'Farsight Security, Inc.'
+AUTHOR_EMAIL = 'software@farsightsecurity.com'
+
 
 from distutils.core import setup, Command
 from distutils.extension import Extension
@@ -64,6 +70,11 @@ try:
     setup(
         name = NAME,
         version = VERSION,
+        license=LICENSE,
+        description=DESCRIPTION,
+        url=URL,
+        author=AUTHOR,
+        author_email=AUTHOR_EMAIL,
         ext_modules = [ Extension('mtbl', ['mtbl.pyx'], **pkgconfig('libmtbl >= 1.1.0')) ],
         cmdclass = {
             'build_ext': build_ext,
