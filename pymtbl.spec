@@ -1,6 +1,6 @@
 Name:           python3-pymtbl
-Version:        0.5.0
-Release:        2%{?dist}
+Version:        0.5.1
+Release:        1%{?dist}
 Summary:        immutable sorted string table library (Python3 bindings)
 
 License:        Apache-2.0
