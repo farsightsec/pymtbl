@@ -30,6 +30,7 @@ cdef extern from "mtbl.h":
         MTBL_COMPRESSION_ZLIB
         MTBL_COMPRESSION_LZ4
         MTBL_COMPRESSION_LZ4HC
+        MTBL_COMPRESSION_ZSTD
 
     struct mtbl_iter:
         pass
