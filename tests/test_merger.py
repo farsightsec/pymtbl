@@ -18,7 +18,9 @@ from tests import MtblTestCase
 
 
 def merge_func_str(key, val0, val1):
-    return val0 + b' ' + val1
+    s = [val0, val1]
+    s.sort()
+    return s[0] + b' ' + s[1]
 
 def merge_func_ints(_, val0, val1):
     i0 = mtbl.varint_decode(val0)
