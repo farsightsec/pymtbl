@@ -1,7 +1,7 @@
 pymtbl (0.5.2-1) debian-farsightsec; urgency=medium
 
-  * Add MTBL_COMPRESSION_ZSTD
-  * Explicitly sort some unit test results for consistency
+  * Add MTBL_COMPRESSION_ZSTD.
+  * Explicitly sort some unit test results for consistency.
 
  -- Farsight Security Inc <software@farsightsecurity.com>  Thu, 07 Mar 2024 10:31:12 -0500
 
