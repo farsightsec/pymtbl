@@ -1,4 +1,4 @@
-pymtbl (0.5.2-1) debian-farsightsec; urgency=medium
+pymtbl (0.6.0-1) debian-farsightsec; urgency=medium
 
   * Add MTBL_COMPRESSION_ZSTD.
   * Explicitly sort some unit test results for consistency.
