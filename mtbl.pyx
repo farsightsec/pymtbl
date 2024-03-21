@@ -1,5 +1,6 @@
 #cython: embedsignature=True
 #cython: language_level=2
+# Copyright (c) 2024 DomainTools LLC
 # Copyright (c) 2015-2019 by Farsight Security, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +25,7 @@ COMPRESSION_SNAPPY = MTBL_COMPRESSION_SNAPPY
 COMPRESSION_ZLIB = MTBL_COMPRESSION_ZLIB
 COMPRESSION_LZ4 = MTBL_COMPRESSION_LZ4
 COMPRESSION_LZ4HC = MTBL_COMPRESSION_LZ4HC
+COMPRESSION_ZSTD = MTBL_COMPRESSION_ZSTD
 
 class KeyOrderError(Exception):
     pass
@@ -460,7 +462,8 @@ cdef class writer(object):
                 compression == COMPRESSION_SNAPPY or
                 compression == COMPRESSION_ZLIB or
                 compression == COMPRESSION_LZ4 or
-                compression == COMPRESSION_LZ4HC):
+                compression == COMPRESSION_LZ4HC or
+                compression == COMPRESSION_ZSTD):
             raise UnknownCompressionTypeException
 
         self._lock = threading.Semaphore()
