@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Robert Edmonds <edmonds@debian.org>
 Build-Depends:
  cython3,
- dh-compat (= 11),
+ dh-compat (= 13),
  dh-python,
  libmtbl-dev (>= 0.8.0~),
  pkg-config,
