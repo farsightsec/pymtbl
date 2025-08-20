@@ -1,3 +1,10 @@
+pymtbl (0.5.2-1) debian-farsightsec; urgency=medium
+
+  * Add zstd compression.
+  * Update packaging for debian 13 trixie.
+
+ -- Farsight Security Inc <software@farsightsecurity.com>  Wed, 20 Aug 2025 13:31:00 -0400
+
 pymtbl (0.5.1-1) debian-farsightsec; urgency=medium
 
   * Provide more detailed metadata in setup.py.
