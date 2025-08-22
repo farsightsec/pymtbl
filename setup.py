@@ -14,7 +14,7 @@
 # limitations under the License.
 
 NAME = 'pymtbl'
-VERSION = '0.5.1'
+VERSION = '0.5.2'
 LICENSE = 'Apache License 2.0'
 DESCRIPTION = 'Python extension module for the mtbl C library'
 URL = 'https://github.com/farsightsec/pymtbl'
