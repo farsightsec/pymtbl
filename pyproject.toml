@@ -7,7 +7,7 @@ name = "pymtbl"
 version = "0.6.1"
 description = "Python extension module for the mtbl C library"
 readme = "README.md"
-license = "Apache-2.0"
+license = {text = "Apache-2.0"}
 requires-python = ">=3.5"
 authors = [
     {name = "Farsight Security, Inc.", email = "software@farsightsecurity.com"},
