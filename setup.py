@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Copyright (c) 2026 DomainTools LLC
 # Copyright (c) 2015-2019, 2022 by Farsight Security, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,23 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import subprocess
+
+from setuptools import setup, Extension
+
 NAME = "pymtbl"
-VERSION = "0.6.0"
-LICENSE = "Apache License 2.0"
-DESCRIPTION = "Python extension module for the mtbl C library"
-URL = "https://github.com/farsightsec/pymtbl"
-AUTHOR = "Farsight Security, Inc."
-AUTHOR_EMAIL = "software@farsightsecurity.com"
-
-
-from distutils.core import setup, Command
-from distutils.extension import Extension
-import unittest
+VERSION = "0.6.1"
 
 
 def pkgconfig(*packages, **kw):
-    import subprocess
-
     flag_map = {"-I": "include_dirs", "-L": "library_dirs", "-l": "libraries"}
 
     pkg_config_cmd = (
@@ -49,48 +43,23 @@ def pkgconfig(*packages, **kw):
     return kw
 
 
-class Test(Command):
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        unittest.TextTestRunner(verbosity=1).run(
-            unittest.TestLoader().discover("tests")
-        )
-
-
 try:
-    from Cython.Distutils import build_ext
+    from Cython.Build import cythonize
 
-    setup(
-        name=NAME,
-        version=VERSION,
-        license=LICENSE,
-        description=DESCRIPTION,
-        url=URL,
-        author=AUTHOR,
-        author_email=AUTHOR_EMAIL,
-        ext_modules=[Extension("mtbl", ["mtbl.pyx"], **pkgconfig("libmtbl >= 1.1.0"))],
-        cmdclass={
-            "build_ext": build_ext,
-            "test": Test,
-        },
+    ext_modules = cythonize(
+        [Extension("mtbl", ["mtbl.pyx"], **pkgconfig("libmtbl >= 1.1.0"))],
+        language_level="3",
     )
 except ImportError:
-    import os
-
     if os.path.isfile("mtbl.c"):
-        setup(
-            name=NAME,
-            version=VERSION,
-            ext_modules=[
-                Extension("mtbl", ["mtbl.c"], **pkgconfig("libmtbl >= 1.1.0"))
-            ],
-        )
+        ext_modules = [
+            Extension("mtbl", ["mtbl.c"], **pkgconfig("libmtbl >= 1.1.0"))
+        ]
     else:
         raise
+
+setup(
+    name=NAME,
+    version=VERSION,
+    ext_modules=ext_modules,
+)

@@ -6,7 +6,7 @@ Build-Depends:
  cython3,
  debhelper-compat (= 13),
  dh-python,
- libmtbl-dev (>= 0.8.0~),
+ libmtbl-dev (>= 1.1.0~),
  pkg-config,
  python3-all-dev (>= 3.5~),
  python3-setuptools,

@@ -1,3 +1,10 @@
+pymtbl (0.6.1-1) debian-farsightsec; urgency=medium
+
+  * Fix build with Cython 3.X.
+  * Modernize packaging: add pyproject.toml.
+
+ -- Allan LeSage <alesage@domaintools.com>  Mon, 18 Aug 2026 15:00:00 -0400
+
 pymtbl (0.6.0-2) debian-farsightsec; urgency=medium
 
   * Update packaging for debian 13 trixie.
