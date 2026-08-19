@@ -8,6 +8,7 @@ URL:            https://github.com/farsightsec/pymtbl
 Source0:        pymtbl-%{version}.tar.gz
 
 BuildRequires:  mtbl-devel
+BuildRequires:  gcc
 BuildRequires:  python3-devel
 BuildRequires:  python3-Cython
 BuildRequires:  python3-setuptools
