@@ -1,7 +1,7 @@
 Source: pymtbl
 Section: python
 Priority: optional
-Maintainer: Robert Edmonds <edmonds@debian.org>
+Maintainer: DomainTools LLC <software@domaintools.com>
 Build-Depends:
  cython3,
  debhelper-compat (= 13),
