@@ -48,7 +48,7 @@ try:
 
     ext_modules = cythonize(
         [Extension("mtbl", ["mtbl.pyx"], **pkgconfig("libmtbl >= 1.1.0"))],
-        language_level="3",
+        language_level = 3,
     )
 except ImportError:
     if os.path.isfile("mtbl.c"):
