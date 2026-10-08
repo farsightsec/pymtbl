@@ -14,7 +14,6 @@
 # limitations under the License.
 cimport cython
 from cpython cimport bool
-from cpython.string cimport *
 from libc.stddef cimport *
 from libc.stdint cimport *
 from libc.stdlib cimport *
